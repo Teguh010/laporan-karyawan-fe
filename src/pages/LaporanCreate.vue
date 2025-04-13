@@ -66,57 +66,89 @@
         <div>
           <q-btn type="submit" color="primary" label="Submit" :loading="loading" />
         </div>
+         <q-btn flat label="Print PDF" color="primary" @click="generatePdf" />
       </q-form>
     </div>
+
+    <q-dialog v-model="showPdfPreview">
+      <q-card style="width: 800px; max-width: 90vw;">
+        <q-card-section>
+          <div class="text-h6">Preview Laporan</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-none">
+          <LaporanPdfTemplate :data="form" ref="pdfTemplate" />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn flat label="Tutup" color="primary" v-close-popup />
+          <q-btn flat label="Print PDF" color="primary" @click="generatePdf" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script>
-import { defineComponent, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { useLaporanStore } from 'stores/laporan-store';
-import { useQuasar } from 'quasar';
+import { defineComponent, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useQuasar } from 'quasar'
+import { useLaporanStore } from 'stores/laporan-store'
+import html2pdf from 'html2pdf.js'
+import LaporanPdfTemplate from 'components/LaporanPdfTemplate.vue'
 
 export default defineComponent({
   name: 'LaporanCreate',
+  
+  components: {
+    LaporanPdfTemplate
+  },
 
   setup() {
-    const router = useRouter();
-    const laporanStore = useLaporanStore();
-    const $q = useQuasar();
-    const loading = ref(false);
+    const router = useRouter()
+    const laporanStore = useLaporanStore()
+    const $q = useQuasar()
+    const loading = ref(false)
+    const showPdfPreview = ref(false)
+    const pdfTemplate = ref(null)
 
     const form = ref({
       namaBarang: '',
       nomorBarang: '',
       noSurat: ''
-    });
+    })
 
-    const needApproveFiles = ref([null]);
-    const noNeedApproveFiles = ref([null]);
+    const needApproveFiles = ref([null])
+    const noNeedApproveFiles = ref([null])
 
     const onFileSelected = (file, type, index) => {
-      if (!file) return;
-      console.log(`File selected for ${type}:`, file);
-    };
+      if (!file) return
+      console.log(`File selected for ${type}:`, file)
+    }
 
     const onSubmit = async () => {
       try {
         loading.value = true;
         
-        // Create FormData
         const formData = new FormData();
-        formData.append('namaBarang', form.value.namaBarang);
-        formData.append('nomorBarang', form.value.nomorBarang);
-        formData.append('noSurat', form.value.noSurat);
-
-        // Append files
-        needApproveFiles.value.forEach((file, index) => {
-          if (file) formData.append(`needApprove_${index}`, file);
+        
+        // Append form fields
+        Object.keys(form.value).forEach(key => {
+          formData.append(key, form.value[key]);
         });
 
+        // Append Need Approve files
+        needApproveFiles.value.forEach((file, index) => {
+          if (file) {
+            formData.append(`needApproveFiles`, file);
+          }
+        });
+
+        // Append No Need Approve files
         noNeedApproveFiles.value.forEach((file, index) => {
-          if (file) formData.append(`noNeedApprove_${index}`, file);
+          if (file) {
+            formData.append(`noNeedApproveFiles`, file);
+          }
         });
 
         const result = await laporanStore.createLaporan(formData);
@@ -126,8 +158,19 @@ export default defineComponent({
           message: 'Laporan berhasil dibuat'
         });
 
-        router.push(`/laporan/${result.id}`);
+        // Show PDF preview
+        showPdfPreview.value = true;
+
+        // Add watcher for when preview is closed
+        watch(showPdfPreview, (newValue) => {
+          if (!newValue) {
+            // Preview was closed, now redirect
+            router.push(`/laporan/${result.id}`);
+          }
+        });
+
       } catch (error) {
+        console.error('Error submitting form:', error);
         $q.notify({
           type: 'negative',
           message: 'Terjadi kesalahan saat membuat laporan'
@@ -135,7 +178,59 @@ export default defineComponent({
       } finally {
         loading.value = false;
       }
-    };
+    }
+
+    const generatePdf = async () => {
+      const element = document.getElementById('pdf-content')
+      if (!element) {
+        console.error('PDF content element not found')
+        $q.notify({
+          type: 'negative',
+          message: 'PDF content not found'
+        })
+        return
+      }
+
+      try {
+        const opt = {
+          margin: 1,
+          filename: `laporan-${form.value.nomorBarang}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { 
+            scale: 2,
+            useCORS: true,
+            logging: true
+          },
+          jsPDF: { 
+            unit: 'mm', 
+            format: 'a4', 
+            orientation: 'portrait'
+          }
+        }
+
+        // Wait for images to load
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        $q.loading.show({
+          message: 'Generating PDF...'
+        })
+
+        await html2pdf().set(opt).from(element).save()
+
+        $q.loading.hide()
+        $q.notify({
+          type: 'positive',
+          message: 'PDF generated successfully'
+        })
+      } catch (error) {
+        console.error('Error generating PDF:', error)
+        $q.loading.hide()
+        $q.notify({
+          type: 'negative',
+          message: 'Error generating PDF'
+        })
+      }
+    }
 
     return {
       form,
@@ -143,8 +238,11 @@ export default defineComponent({
       needApproveFiles,
       noNeedApproveFiles,
       onFileSelected,
-      onSubmit
-    };
+      onSubmit,
+      showPdfPreview,
+      generatePdf,
+      pdfTemplate
+    }
   }
-});
+})
 </script>
