@@ -23,14 +23,16 @@
       
       <div class="data-section">
         <table>
-          <tr>
-            <td width="150">Nama Barang</td>
-            <td>: {{ data.namaBarang }}</td>
-          </tr>
-          <tr>
-            <td>Nomor Barang</td>
-            <td>: {{ data.nomorBarang }}</td>
-          </tr>
+          <tbody>
+            <tr>
+              <td width="150">Nama Barang</td>
+              <td>: {{ data.namaBarang }}</td>
+            </tr>
+            <tr>
+              <td>Nomor Barang</td>
+              <td>: {{ data.nomorBarang }}</td>
+            </tr>
+          </tbody>
         </table>
       </div>
 
