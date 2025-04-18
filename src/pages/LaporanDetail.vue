@@ -28,6 +28,13 @@
                       <q-item-label>{{ laporan.noSurat }}</q-item-label>
                     </q-item-section>
                   </q-item>
+
+                  <q-item>
+                    <q-item-section>
+                      <q-item-label caption>Tanggal Dibuat</q-item-label>
+                      <q-item-label>{{ new Date(laporan.createdAt).toLocaleDateString('id-ID') }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
                 </q-list>
               </q-card-section>
             </q-card>
@@ -39,12 +46,17 @@
               <q-card-section>
                 <div class="text-h6">Files Need Approve</div>
                 <q-list>
-                  <q-item v-for="file in laporan.files.needApprove" :key="file.name">
+                  <q-item v-for="file in laporan.needApproveFiles" :key="file.path">
                     <q-item-section>
                       <q-item-label>{{ file.name }}</q-item-label>
                     </q-item-section>
                     <q-item-section side>
                       <q-btn flat color="primary" icon="download" @click="downloadFile(file)" />
+                    </q-item-section>
+                  </q-item>
+                  <q-item v-if="!laporan.needApproveFiles?.length">
+                    <q-item-section>
+                      <q-item-label>No files available</q-item-label>
                     </q-item-section>
                   </q-item>
                 </q-list>
@@ -58,12 +70,17 @@
               <q-card-section>
                 <div class="text-h6">Files No Need Approve</div>
                 <q-list>
-                  <q-item v-for="file in laporan.files.noNeedApprove" :key="file.name">
+                  <q-item v-for="file in laporan.noNeedApproveFiles" :key="file.path">
                     <q-item-section>
                       <q-item-label>{{ file.name }}</q-item-label>
                     </q-item-section>
                     <q-item-section side>
                       <q-btn flat color="primary" icon="download" @click="downloadFile(file)" />
+                    </q-item-section>
+                  </q-item>
+                  <q-item v-if="!laporan.noNeedApproveFiles?.length">
+                    <q-item-section>
+                      <q-item-label>No files available</q-item-label>
                     </q-item-section>
                   </q-item>
                 </q-list>
@@ -98,8 +115,11 @@ export default defineComponent({
 
     const loadLaporan = async () => {
       try {
-        laporan.value = await laporanStore.getLaporanDetail(route.params.id);
+        const data = await laporanStore.getLaporanDetail(route.params.id);
+        console.log('Laporan data:', data); // Debugging
+        laporan.value = data;
       } catch (error) {
+        console.error('Error loading laporan:', error); // Debugging
         $q.notify({
           type: 'negative',
           message: 'Gagal memuat detail laporan'
@@ -107,13 +127,25 @@ export default defineComponent({
       }
     };
 
-    const downloadFile = (file) => {
-      // Mock download function
-      console.log('Downloading file:', file);
-      $q.notify({
-        type: 'info',
-        message: `Downloading ${file.name}`
-      });
+    const downloadFile = async (file) => {
+      try {
+        if (file.url) {
+          window.open(file.url, '_blank');
+          
+          $q.notify({
+            type: 'positive',
+            message: `Downloading ${file.name}`
+          });
+        } else {
+          throw new Error('File URL not available');
+        }
+      } catch (error) {
+        console.error('Error downloading file:', error);
+        $q.notify({
+          type: 'negative',
+          message: `Failed to download ${file.name}`
+        });
+      }
     };
 
     onMounted(() => {
