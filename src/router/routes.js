@@ -36,6 +36,10 @@ const routes = [
       { 
         path: ':id', 
         component: () => import('pages/LaporanDetail.vue') 
+      },
+      {
+        path: 'users',
+        component: () => import('pages/UserList.vue')
       }
     ]
   },
