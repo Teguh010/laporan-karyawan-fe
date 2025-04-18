@@ -15,7 +15,14 @@
           Laporan Karyawan
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <q-btn
+          flat
+          dense
+          round
+          icon="logout"
+          aria-label="Logout"
+          @click="logout"
+        />
       </q-toolbar>
     </q-header>
 
@@ -25,23 +32,25 @@
   </q-layout>
 </template>
 
-<script>
-import { defineComponent, ref } from 'vue'
-import { useRouter } from 'vue-router'
+<script setup>
+import { useRouter } from 'vue-router';
+import { useAuthStore } from 'stores/auth-store';
+import { useQuasar } from 'quasar';
 
-export default defineComponent({
-  name: 'MainLayout',
+const router = useRouter();
+const authStore = useAuthStore();
+const $q = useQuasar();
 
-  setup () {
-    const router = useRouter()
+const goBack = () => {
+  router.back();
+};
 
-    const goBack = () => {
-      router.back()
-    }
-
-    return {
-      goBack
-    }
-  }
-})
+const logout = () => {
+  authStore.logout();
+  $q.notify({
+    type: 'info',
+    message: 'Logged out successfully'
+  });
+  router.push('/login');
+};
 </script>
