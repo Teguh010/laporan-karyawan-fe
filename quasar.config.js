@@ -65,7 +65,7 @@ module.exports = configure(function (/* ctx */) {
       // ignorePublicFolder: true,
       // minify: false,
       // polyfillModulePreload: true,
-      // distDir
+      distDir: 'www', // mengubah output directory menjadi www
 
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},

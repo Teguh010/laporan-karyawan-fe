@@ -2,7 +2,7 @@
   "name": "laporan-karyawan-fe",
   "version": "0.0.1",
   "description": "A Quasar Project",
-  "productName": "Quasar App",
+  "productName": "Laporan Karyawan",
   "author": "Teguh <teguhbadrusalam6@gmail.com>",
   "private": true,
   "scripts": {
@@ -10,9 +10,13 @@
     "format": "prettier --write \"**/*.{js,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
     "dev": "quasar dev",
-    "build": "quasar build"
+    "build": "quasar build",
+    "android": "quasar dev -m capacitor -T android",
+    "build:android": "quasar build -m capacitor -T android"
   },
   "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/core": "^7.2.0",
     "@quasar/extras": "^1.16.4",
     "axios": "^1.2.1",
     "html2pdf.js": "^0.10.3",
@@ -22,6 +26,7 @@
     "vue-router": "^4.0.12"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.2.0",
     "@quasar/app-vite": "^1.8.0",
     "autoprefixer": "^10.4.2",
     "eslint": "^8.11.0",

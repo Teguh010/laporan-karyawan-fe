@@ -5,6 +5,7 @@ node_modules
 # Quasar core related directories
 .quasar
 /dist
+/www
 /quasar.config.*.temporary.compiled*
 
 # Cordova related directories and files
@@ -16,6 +17,7 @@ node_modules
 # Capacitor related directories and files
 /src-capacitor/www
 /src-capacitor/node_modules
+/android
 
 # Log files
 npm-debug.log*
