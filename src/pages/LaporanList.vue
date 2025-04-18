@@ -10,7 +10,7 @@
             color="primary" 
             icon="add" 
             label="Buat Laporan" 
-            to="/laporan/create" 
+            to="/create" 
           />
         </div>
       </div>
@@ -84,11 +84,20 @@
   </q-page>
 </template>
 
-<script>
-import { defineComponent, ref, onMounted } from 'vue'
+<script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useLaporanStore } from 'stores/laporan-store'
+
+const router = useRouter()
+const $q = useQuasar()
+const laporanStore = useLaporanStore()
+
+const loading = ref(false)
+const laporanList = ref([])
+const showDeleteConfirm = ref(false)
+const selectedLaporan = ref(null)
 
 const columns = [
   {
@@ -132,85 +141,57 @@ const columns = [
   }
 ]
 
-export default defineComponent({
-  name: 'LaporanList',
+const formatDate = (dateString) => {
+  return new Date(dateString).toLocaleDateString('id-ID')
+}
 
-  setup () {
-    const router = useRouter()
-    const $q = useQuasar()
-    
-    const loading = ref(false)
-    const laporanList = ref([])
-    const showDeleteConfirm = ref(false)
-    const selectedLaporan = ref(null)
-
-    const formatDate = (dateString) => {
-      return new Date(dateString).toLocaleDateString('id-ID')
-    }
-
-    const loadLaporanList = async () => {
-      loading.value = true
-      try {
-        const laporanStore = useLaporanStore()
-        const data = await laporanStore.getAllLaporan()
-        laporanList.value = data
-      } catch (error) {
-        console.error('Error loading laporan list:', error)
-        $q.notify({
-          type: 'negative',
-          message: 'Gagal memuat daftar laporan'
-        })
-      } finally {
-        loading.value = false
-      }
-    }
-
-    const viewDetail = (row) => {
-      router.push(`/laporan/${row.id}`)
-    }
-
-    const onRowClick = (evt, row) => {
-      viewDetail(row)
-    }
-
-    const confirmDelete = (row) => {
-      selectedLaporan.value = row
-      showDeleteConfirm.value = true
-    }
-
-    const deleteLaporan = async () => {
-      try {
-        const laporanStore = useLaporanStore()
-        await laporanStore.deleteLaporan(selectedLaporan.value.id)
-        await loadLaporanList()
-        $q.notify({
-          type: 'positive',
-          message: 'Laporan berhasil dihapus'
-        })
-      } catch (error) {
-        console.error('Error deleting laporan:', error)
-        $q.notify({
-          type: 'negative',
-          message: 'Gagal menghapus laporan'
-        })
-      }
-    }
-
-    onMounted(() => {
-      loadLaporanList()
+const loadLaporanList = async () => {
+  loading.value = true
+  try {
+    const data = await laporanStore.getAllLaporan()
+    laporanList.value = data
+  } catch (error) {
+    console.error('Error loading laporan list:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal memuat daftar laporan'
     })
-
-    return {
-      loading,
-      laporanList,
-      columns,
-      showDeleteConfirm,
-      onRowClick,
-      viewDetail,
-      confirmDelete,
-      deleteLaporan,
-      formatDate
-    }
+  } finally {
+    loading.value = false
   }
+}
+
+const viewDetail = (row) => {
+  router.push(`/${row.id}`)
+}
+
+const onRowClick = (evt, row) => {
+  viewDetail(row)
+}
+
+const confirmDelete = (row) => {
+  selectedLaporan.value = row
+  showDeleteConfirm.value = true
+}
+
+const deleteLaporan = async () => {
+  try {
+    await laporanStore.deleteLaporan(selectedLaporan.value.id)
+    await loadLaporanList()
+    $q.notify({
+      type: 'positive',
+      message: 'Laporan berhasil dihapus'
+    })
+  } catch (error) {
+    console.error('Error deleting laporan:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal menghapus laporan'
+    })
+  }
+}
+
+onMounted(() => {
+  loadLaporanList()
 })
 </script>

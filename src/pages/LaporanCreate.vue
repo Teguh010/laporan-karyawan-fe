@@ -89,160 +89,138 @@
   </q-page>
 </template>
 
-<script>
-import { defineComponent, ref, watch } from 'vue'
+<script setup>
+import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useLaporanStore } from 'stores/laporan-store'
 import html2pdf from 'html2pdf.js'
 import LaporanPdfTemplate from 'components/LaporanPdfTemplate.vue'
 
-export default defineComponent({
-  name: 'LaporanCreate',
-  
-  components: {
-    LaporanPdfTemplate
-  },
+const router = useRouter()
+const laporanStore = useLaporanStore()
+const $q = useQuasar()
+const loading = ref(false)
+const showPdfPreview = ref(false)
+const pdfTemplate = ref(null)
 
-  setup() {
-    const router = useRouter()
-    const laporanStore = useLaporanStore()
-    const $q = useQuasar()
-    const loading = ref(false)
-    const showPdfPreview = ref(false)
-    const pdfTemplate = ref(null)
+const form = ref({
+  namaBarang: '',
+  nomorBarang: '',
+  noSurat: ''
+})
 
-    const form = ref({
-      namaBarang: '',
-      nomorBarang: '',
-      noSurat: ''
+const needApproveFiles = ref([null])
+const noNeedApproveFiles = ref([null])
+
+const onFileSelected = (file, type, index) => {
+  if (!file) return
+  console.log(`File selected for ${type}:`, file)
+}
+
+const onSubmit = async () => {
+  try {
+    loading.value = true
+    
+    const formData = new FormData()
+    
+    // Append form fields
+    Object.keys(form.value).forEach(key => {
+      formData.append(key, form.value[key])
     })
 
-    const needApproveFiles = ref([null])
-    const noNeedApproveFiles = ref([null])
-
-    const onFileSelected = (file, type, index) => {
-      if (!file) return
-      console.log(`File selected for ${type}:`, file)
-    }
-
-    const onSubmit = async () => {
-      try {
-        loading.value = true;
-        
-        const formData = new FormData();
-        
-        // Append form fields
-        Object.keys(form.value).forEach(key => {
-          formData.append(key, form.value[key]);
-        });
-
-        // Append Need Approve files
-        needApproveFiles.value.forEach((file, index) => {
-          if (file) {
-            formData.append(`needApproveFiles`, file);
-          }
-        });
-
-        // Append No Need Approve files
-        noNeedApproveFiles.value.forEach((file, index) => {
-          if (file) {
-            formData.append(`noNeedApproveFiles`, file);
-          }
-        });
-
-        const result = await laporanStore.createLaporan(formData);
-        
-        $q.notify({
-          type: 'positive',
-          message: 'Laporan berhasil dibuat'
-        });
-
-        // Show PDF preview
-        showPdfPreview.value = true;
-
-        // Add watcher for when preview is closed
-        watch(showPdfPreview, (newValue) => {
-          if (!newValue) {
-            // Preview was closed, now redirect
-            router.push(`/laporan/${result.id}`);
-          }
-        });
-
-      } catch (error) {
-        console.error('Error submitting form:', error);
-        $q.notify({
-          type: 'negative',
-          message: 'Terjadi kesalahan saat membuat laporan'
-        });
-      } finally {
-        loading.value = false;
+    // Append Need Approve files
+    needApproveFiles.value.forEach((file) => {
+      if (file) {
+        formData.append('needApproveFiles', file)
       }
-    }
+    })
 
-    const generatePdf = async () => {
-      const element = document.getElementById('pdf-content')
-      if (!element) {
-        console.error('PDF content element not found')
-        $q.notify({
-          type: 'negative',
-          message: 'PDF content not found'
-        })
-        return
+    // Append No Need Approve files
+    noNeedApproveFiles.value.forEach((file) => {
+      if (file) {
+        formData.append('noNeedApproveFiles', file)
       }
+    })
 
-      try {
-        const opt = {
-          margin: 1,
-          filename: `laporan-${form.value.nomorBarang}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { 
-            scale: 2,
-            useCORS: true,
-            logging: true
-          },
-          jsPDF: { 
-            unit: 'mm', 
-            format: 'a4', 
-            orientation: 'portrait'
-          }
-        }
+    const result = await laporanStore.createLaporan(formData)
+    
+    $q.notify({
+      type: 'positive',
+      message: 'Laporan berhasil dibuat'
+    })
 
-        // Wait for images to load
-        await new Promise(resolve => setTimeout(resolve, 500))
+    // Show PDF preview
+    showPdfPreview.value = true
 
-        $q.loading.show({
-          message: 'Generating PDF...'
-        })
-
-        await html2pdf().set(opt).from(element).save()
-
-        $q.loading.hide()
-        $q.notify({
-          type: 'positive',
-          message: 'PDF generated successfully'
-        })
-      } catch (error) {
-        console.error('Error generating PDF:', error)
-        $q.loading.hide()
-        $q.notify({
-          type: 'negative',
-          message: 'Error generating PDF'
-        })
+    // Add watcher for when preview is closed
+    watch(showPdfPreview, (newValue) => {
+      if (!newValue) {
+        // Preview was closed, now redirect
+        router.push(`/${result.id}`)
       }
-    }
+    })
 
-    return {
-      form,
-      loading,
-      needApproveFiles,
-      noNeedApproveFiles,
-      onFileSelected,
-      onSubmit,
-      showPdfPreview,
-      generatePdf,
-      pdfTemplate
-    }
+  } catch (error) {
+    console.error('Error submitting form:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Terjadi kesalahan saat membuat laporan'
+    })
+  } finally {
+    loading.value = false
   }
-})
+}
+
+const generatePdf = async () => {
+  const element = document.getElementById('pdf-content')
+  if (!element) {
+    console.error('PDF content element not found')
+    $q.notify({
+      type: 'negative',
+      message: 'PDF content not found'
+    })
+    return
+  }
+
+  try {
+    const opt = {
+      margin: 1,
+      filename: `laporan-${form.value.nomorBarang}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        logging: true
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'portrait'
+      }
+    }
+
+    // Wait for images to load
+    await new Promise(resolve => setTimeout(resolve, 500))
+
+    $q.loading.show({
+      message: 'Generating PDF...'
+    })
+
+    await html2pdf().set(opt).from(element).save()
+
+    $q.loading.hide()
+    $q.notify({
+      type: 'positive',
+      message: 'PDF generated successfully'
+    })
+  } catch (error) {
+    console.error('Error generating PDF:', error)
+    $q.loading.hide()
+    $q.notify({
+      type: 'negative',
+      message: 'Error generating PDF'
+    })
+  }
+}
 </script>

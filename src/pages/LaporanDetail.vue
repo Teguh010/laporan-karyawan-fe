@@ -98,64 +98,53 @@
   </q-page>
 </template>
 
-<script>
-import { defineComponent, ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
-import { useLaporanStore } from 'stores/laporan-store';
-import { useQuasar } from 'quasar';
+<script setup>
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useLaporanStore } from 'stores/laporan-store'
+import { useQuasar } from 'quasar'
 
-export default defineComponent({
-  name: 'LaporanDetail',
+const route = useRoute()
+const laporanStore = useLaporanStore()
+const $q = useQuasar()
+const laporan = ref(null)
 
-  setup() {
-    const route = useRoute();
-    const laporanStore = useLaporanStore();
-    const $q = useQuasar();
-    const laporan = ref(null);
-
-    const loadLaporan = async () => {
-      try {
-        const data = await laporanStore.getLaporanDetail(route.params.id);
-        console.log('Laporan data:', data); // Debugging
-        laporan.value = data;
-      } catch (error) {
-        console.error('Error loading laporan:', error); // Debugging
-        $q.notify({
-          type: 'negative',
-          message: 'Gagal memuat detail laporan'
-        });
-      }
-    };
-
-    const downloadFile = async (file) => {
-      try {
-        if (file.url) {
-          window.open(file.url, '_blank');
-          
-          $q.notify({
-            type: 'positive',
-            message: `Downloading ${file.name}`
-          });
-        } else {
-          throw new Error('File URL not available');
-        }
-      } catch (error) {
-        console.error('Error downloading file:', error);
-        $q.notify({
-          type: 'negative',
-          message: `Failed to download ${file.name}`
-        });
-      }
-    };
-
-    onMounted(() => {
-      loadLaporan();
-    });
-
-    return {
-      laporan,
-      downloadFile
-    };
+const loadLaporan = async () => {
+  try {
+    const data = await laporanStore.getLaporanDetail(route.params.id)
+    console.log('Laporan data:', data) // Debugging
+    laporan.value = data
+  } catch (error) {
+    console.error('Error loading laporan:', error) // Debugging
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal memuat detail laporan'
+    })
   }
-});
+}
+
+const downloadFile = async (file) => {
+  try {
+    if (file.url) {
+      window.open(file.url, '_blank')
+      
+      $q.notify({
+        type: 'positive',
+        message: `Downloading ${file.name}`
+      })
+    } else {
+      throw new Error('File URL not available')
+    }
+  } catch (error) {
+    console.error('Error downloading file:', error)
+    $q.notify({
+      type: 'negative',
+      message: `Failed to download ${file.name}`
+    })
+  }
+}
+
+onMounted(() => {
+  loadLaporan()
+})
 </script>
