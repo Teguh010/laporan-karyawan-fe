@@ -7,8 +7,8 @@ import axios from 'axios'
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = axios.create({ 
-  baseURL: 'http://localhost:3000'  // Sesuaikan dengan port backend
+const api = axios.create({
+  baseURL: 'http://p4sksg888k4s0okcgcwg4wks.152.53.231.3.sslip.io'  // Sesuaikan dengan port backend
 })
 
 export default boot(({ app }) => {
