@@ -85,6 +85,6 @@ const onSubmit = async () => {
 
 <style lang="scss" scoped>
 .login-card {
-  width: 40vw;
+  width: 100%;
 }
 </style>
