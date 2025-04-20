@@ -17,12 +17,63 @@ node_modules
 # Capacitor related directories and files
 /src-capacitor/www
 /src-capacitor/node_modules
-/android
+/src-capacitor/android/app/src/main
+# Android specific ignores
+/src-capacitor/android/.gradle
+/src-capacitor/android/build
+/src-capacitor/android/app/build
+/src-capacitor/android/capacitor-cordova-android-plugins
+/assets/public
+/src-capacitor/android/app/src/main/assets/capacitor.config.json
+/src-capacitor/android/app/src/main/assets/capacitor.plugins.json
+/src-capacitor/android/app/src/main/res/xml/config.xml
+/src-capacitor/android/.idea
+/src-capacitor/android/local.properties
+/src-capacitor/android/*.iml
+/src-capacitor/android/.settings
+/src-capacitor/android/.project
+
+# Additional Android ignores
+/src-capacitor/android/**/*.iml
+/src-capacitor/android/**/.gradle
+/src-capacitor/android/**/build
+/src-capacitor/android/**/release
+/src-capacitor/android/**/debug
+/src-capacitor/android/**/.idea
+/src-capacitor/android/**/.settings
+/src-capacitor/android/**/.classpath
+/src-capacitor/android/**/.project
+/src-capacitor/android/**/local.properties
+/src-capacitor/android/**/gradle-wrapper.jar
+/src-capacitor/android/.externalNativeBuild
+/src-capacitor/android/.cxx
+/src-capacitor/android/**/captures
+/src-capacitor/android/**/output.json
+/src-capacitor/android/**/output-metadata.json
+/src-capacitor/android/**/generated
+/src-capacitor/android/**/bin
+/src-capacitor/android/**/gen
+/src-capacitor/android/**/out
+/src-capacitor/android/**/tmp
+/src-capacitor/android/**/.navigation
+/src-capacitor/android/**/.DS_Store
+/src-capacitor/android/**/*.hprof
+/src-capacitor/android/**/lint
+
+# Keep keystore files out of git (security best practice)
+/src-capacitor/android/app/*.keystore
+/src-capacitor/android/app/*.jks
+/src-capacitor/android/**/*.keystore
+/src-capacitor/android/**/*.jks
+/src-capacitor/android/**/*.pepk
+/src-capacitor/android/**/*.p12
 
 # Log files
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+/src-capacitor/android/**/logcat*
+/src-capacitor/android/**/*.log
 
 # Editor directories and files
 .idea
@@ -30,6 +81,16 @@ yarn-error.log*
 *.ntvs*
 *.njsproj
 *.sln
+.vscode/
+*.swp
+*.swo
+*~
 
-# local .env files
+# local env files
 .env.local*
+.env.*.local
+
+# Temp files
+*.tmp
+*.temp
+*.bak

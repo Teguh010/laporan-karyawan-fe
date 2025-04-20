@@ -1,5 +1,12 @@
 {
   "appId": "com.laporan.karyawan",
   "appName": "Laporan Karyawan",
-  "webDir": "www"
+  "webDir": "www",
+  "server": {
+    "androidScheme": "http",
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true
+  }
 }
