@@ -42,7 +42,7 @@
               </div>
             </q-form>
           </q-card-section>
-          version 1
+          version 2
         </q-card>
     </div>
   </q-page>
