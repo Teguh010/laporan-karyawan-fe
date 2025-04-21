@@ -42,7 +42,7 @@
               </div>
             </q-form>
           </q-card-section>
-          version 2
+          version 3
         </q-card>
     </div>
   </q-page>
@@ -53,6 +53,8 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useAuthStore } from 'stores/auth-store';
+import { androidLog } from 'boot/logger';
+import axios from 'axios';
 
 const router = useRouter();
 const $q = useQuasar();
@@ -66,19 +68,43 @@ const form = ref({
 
 const onSubmit = async () => {
   try {
+    // Test koneksi dulu
+    $q.notify({
+      type: 'info',
+      message: `Connecting to: ${api.defaults.baseURL}`
+    });
+
+    // Tunggu sebentar agar notifikasi bisa dibaca
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    androidLog.log('Login attempt with username:', form.value.username);
     await authStore.login(form.value.username, form.value.password);
     
+    androidLog.log('Login successful');
     $q.notify({
       type: 'positive',
       message: 'Login successful'
     });
 
-    // Redirect to home page
     router.push('/');
   } catch (error) {
+    androidLog.error('Login failed:', error);
+    androidLog.error('Error details:', {
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message
+    });
+    
+    let errorMessage = 'Login failed';
+    if (error.message === 'Network Error') {
+      errorMessage = 'Cannot connect to server. Please check your internet connection or server URL';
+    } else if (error.response?.data?.message) {
+      errorMessage = error.response.data.message;
+    }
+    
     $q.notify({
       type: 'negative',
-      message: error.response?.data?.message || 'Login failed'
+      message: errorMessage
     });
   }
 };

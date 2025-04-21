@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { api } from 'boot/axios';
+import { androidLog } from 'boot/logger';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -20,14 +21,15 @@ export const useAuthStore = defineStore('auth', {
         this.loading = true;
         this.error = null;
 
-        console.log('Attempting login to:', api.defaults.baseURL);
+        androidLog.log('API URL:', api.defaults.baseURL);
+        androidLog.log('Attempting login...');
 
         const response = await api.post('/auth/login', {
           username,
           password
         });
 
-        console.log('Login response:', response.data);
+        androidLog.log('Login response received');
 
         const { access_token, user } = response.data;
 
@@ -39,8 +41,8 @@ export const useAuthStore = defineStore('auth', {
 
         return response.data;
       } catch (error) {
-        console.error('Login error:', error);
-        console.error('Error response:', error.response);
+        androidLog.error('Login error:', error.message);
+        androidLog.error('Error response:', error.response?.data);
         this.error = error.response?.data?.message || 'Login failed';
         throw error;
       } finally {
