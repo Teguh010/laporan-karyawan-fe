@@ -1,6 +1,6 @@
 import { useAuthStore } from 'stores/auth-store';
 
-const authGuard = (to, from, next) => {
+const authGuard = async (to, from, next) => {
   const authStore = useAuthStore();
   if (!authStore.isAuthenticated) {
     next('/login');
@@ -16,7 +16,15 @@ const routes = [
     children: [
       {
         path: '',
-        component: () => import('pages/LoginPage.vue')
+        component: () => import('pages/LoginPage.vue'),
+        beforeEnter: (to, from, next) => {
+          const authStore = useAuthStore();
+          if (authStore.isAuthenticated) {
+            next('/');
+          } else {
+            next();
+          }
+        }
       }
     ]
   },
@@ -25,17 +33,17 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     beforeEnter: authGuard,
     children: [
-      { 
-        path: '', 
-        component: () => import('pages/LaporanList.vue') 
+      {
+        path: '',
+        component: () => import('pages/LaporanList.vue')
       },
-      { 
-        path: 'create', 
-        component: () => import('pages/LaporanCreate.vue') 
+      {
+        path: 'create',
+        component: () => import('pages/LaporanCreate.vue')
       },
-      { 
-        path: ':id', 
-        component: () => import('pages/LaporanDetail.vue') 
+      {
+        path: ':id',
+        component: () => import('pages/LaporanDetail.vue')
       },
       {
         path: 'users',

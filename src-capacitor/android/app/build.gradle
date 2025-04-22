@@ -18,16 +18,16 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file("laporan-karyawan.keystore")
-            storePassword "bismillah"    // ganti dengan password yang baru dibuat
-            keyAlias "laporan-karyawan"
-            keyPassword "bismillah"      // ganti dengan password yang baru dibuat
+            storeFile file("laporan-karyawan-release.keystore")
+            storePassword "bismillah"
+            keyAlias "laporan-karyawan-key"
+            keyPassword "bismillah"
         }
     }
     buildTypes {
         release {
             signingConfig signingConfigs.release
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

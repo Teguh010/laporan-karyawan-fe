@@ -135,11 +135,16 @@ const selectedUser = ref(null);
 const columns = [
   { name: 'username', label: 'Username', field: 'username', align: 'left' },
   { name: 'fullName', label: 'Nama Lengkap', field: 'fullName', align: 'left' },
-  { name: 'role', label: 'Role', field: 'role', align: 'left' },
+  { 
+    name: 'role', 
+    label: 'Role', 
+    field: row => formatRole(row.role), 
+    align: 'left' 
+  },
   { name: 'actions', label: 'Actions', field: 'actions', align: 'center' }
 ];
 
-const roleOptions = ['VENDOR', 'EM', 'USER'];
+const roleOptions = ['vendor', 'em', 'user']; // Ubah menjadi lowercase
 
 const form = ref({
   username: '',
@@ -197,14 +202,20 @@ const confirmDelete = (user) => {
 
 const onSubmit = async () => {
   try {
+    // Pastikan role dalam lowercase
+    const userData = {
+      ...form.value,
+      role: form.value.role.toLowerCase()
+    };
+
     if (isEditing.value) {
-      await userStore.updateUser(selectedUser.value.id, form.value);
+      await userStore.updateUser(selectedUser.value.id, userData);
       $q.notify({
         type: 'positive',
         message: 'User berhasil diperbarui'
       });
     } else {
-      await userStore.createUser(form.value);
+      await userStore.createUser(userData);
       $q.notify({
         type: 'positive',
         message: 'User berhasil ditambahkan'
@@ -234,6 +245,11 @@ const deleteUser = async () => {
       message: 'Gagal menghapus user'
     });
   }
+};
+
+// Untuk menampilkan data di tabel, tambahkan fungsi untuk mengkapitalisasi role
+const formatRole = (role) => {
+  return role?.toUpperCase() || '';
 };
 
 onMounted(() => {

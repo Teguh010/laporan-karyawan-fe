@@ -1,0 +1,27 @@
+{
+	"appId": "com.laporan.karyawan",
+	"appName": "Laporan Karyawan",
+	"webDir": "www",
+	"server": {
+		"androidScheme": "http",
+		"cleartext": true,
+		"allowNavigation": [
+			"*",
+			"http://*",
+			"https://*",
+			"*.sslip.io",
+			"*.152.53.231.3",
+			"p4sksg888k4s0okcgcwg4wks.152.53.231.3.sslip.io"
+		]
+	},
+	"android": {
+		"allowMixedContent": true,
+		"captureInput": true,
+		"webContentsDebuggingEnabled": true
+	},
+	"plugins": {
+		"CapacitorHttp": {
+			"enabled": true
+		}
+	}
+}

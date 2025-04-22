@@ -42,7 +42,7 @@
               </div>
             </q-form>
           </q-card-section>
-          version 4
+          version 6
         </q-card>
     </div>
   </q-page>
@@ -53,11 +53,11 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useAuthStore } from 'stores/auth-store';
+import { api } from 'boot/axios';
 import { androidLog } from 'boot/logger';
-import axios from 'axios';
 
-const router = useRouter();
 const $q = useQuasar();
+const router = useRouter();
 const authStore = useAuthStore();
 
 const isPwd = ref(true);
@@ -68,16 +68,14 @@ const form = ref({
 
 const onSubmit = async () => {
   try {
-    // Test koneksi dulu
-    $q.notify({
-      type: 'info',
-      message: `Connecting to: ${api.defaults.baseURL}`
+    androidLog.log('Starting login process...');
+    
+    // Modifikasi log untuk menghindari akses ke api.defaults
+    androidLog.log('Proceeding with login attempt:', {
+      username: form.value.username,
+      // Hapus referensi ke api.defaults.baseURL
     });
 
-    // Tunggu sebentar agar notifikasi bisa dibaca
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    androidLog.log('Login attempt with username:', form.value.username);
     await authStore.login(form.value.username, form.value.password);
     
     androidLog.log('Login successful');
@@ -86,25 +84,25 @@ const onSubmit = async () => {
       message: 'Login successful'
     });
 
-    router.push('/');
+    await router.replace('/');
   } catch (error) {
-    androidLog.error('Login failed:', error);
-    androidLog.error('Error details:', {
-      status: error.response?.status,
-      data: error.response?.data,
-      message: error.message
+    androidLog.error('Login process failed:', {
+      message: error.message,
+      type: error.constructor.name,
+      stack: error.stack
     });
     
     let errorMessage = 'Login failed';
     if (error.message === 'Network Error') {
-      errorMessage = 'Cannot connect to server. Please check your internet connection or server URL';
+      errorMessage = 'Cannot connect to server. Please check your internet connection';
     } else if (error.response?.data?.message) {
       errorMessage = error.response.data.message;
     }
-    
+
     $q.notify({
       type: 'negative',
-      message: errorMessage
+      message: errorMessage,
+      timeout: 2000
     });
   }
 };

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { api } from 'boot/axios';
 import { androidLog } from 'boot/logger';
+import { Capacitor } from '@capacitor/core';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -12,16 +13,33 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     isAuthenticated: (state) => !!state.token,
-    userRole: (state) => state.user?.role
   },
 
   actions: {
+    initializeAuth() {
+      const savedToken = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
+
+      if (savedToken) {
+        this.token = savedToken;
+        this.user = savedUser ? JSON.parse(savedUser) : null;
+
+        // Set token untuk semua platform
+        if (Capacitor.isNativePlatform()) {
+          if ('token' in api) {
+            api.token = savedToken;
+          }
+        } else {
+          api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+        }
+      }
+    },
+
     async login(username, password) {
       try {
         this.loading = true;
         this.error = null;
 
-        androidLog.log('API URL:', api.defaults.baseURL);
         androidLog.log('Attempting login...');
 
         const response = await api.post('/auth/login', {
@@ -29,21 +47,30 @@ export const useAuthStore = defineStore('auth', {
           password
         });
 
-        androidLog.log('Login response received');
+        androidLog.log('Login response:', response.data);
 
         const { access_token, user } = response.data;
 
         this.token = access_token;
         this.user = user;
 
+        // Simpan di localStorage
         localStorage.setItem('token', access_token);
-        api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+        localStorage.setItem('user', JSON.stringify(user));
+
+        // Set token untuk semua platform
+        if (Capacitor.isNativePlatform()) {
+          if ('token' in api) {
+            api.token = access_token;
+          }
+        } else {
+          api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+        }
 
         return response.data;
       } catch (error) {
         androidLog.error('Login error:', error.message);
-        androidLog.error('Error response:', error.response?.data);
-        this.error = error.response?.data?.message || 'Login failed';
+        this.error = error.response?.data?.message || error.message;
         throw error;
       } finally {
         this.loading = false;
@@ -54,14 +81,14 @@ export const useAuthStore = defineStore('auth', {
       this.user = null;
       this.token = null;
       localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
-    },
+      localStorage.removeItem('user');
 
-    initializeAuth() {
-      const token = localStorage.getItem('token');
-      if (token) {
-        this.token = token;
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      if (Capacitor.isNativePlatform()) {
+        if ('token' in api) {
+          api.token = null;
+        }
+      } else {
+        delete api.defaults.headers.common['Authorization'];
       }
     }
   }
