@@ -42,7 +42,7 @@
               </div>
             </q-form>
           </q-card-section>
-          version 6
+          version 7
         </q-card>
     </div>
   </q-page>
@@ -69,7 +69,7 @@ const form = ref({
 const onSubmit = async () => {
   try {
     androidLog.log('Starting login process...');
-    
+
     // Modifikasi log untuk menghindari akses ke api.defaults
     androidLog.log('Proceeding with login attempt:', {
       username: form.value.username,
@@ -77,7 +77,7 @@ const onSubmit = async () => {
     });
 
     await authStore.login(form.value.username, form.value.password);
-    
+
     androidLog.log('Login successful');
     $q.notify({
       type: 'positive',
@@ -91,7 +91,7 @@ const onSubmit = async () => {
       type: error.constructor.name,
       stack: error.stack
     });
-    
+
     let errorMessage = 'Login failed';
     if (error.message === 'Network Error') {
       errorMessage = 'Cannot connect to server. Please check your internet connection';
