@@ -88,6 +88,36 @@
             </q-card>
           </div>
         </div>
+
+        <!-- Tambahkan tombol approval di bagian yang sesuai -->
+        <div class="row q-mt-md" v-if="userCanApprove">
+          <div class="col-12">
+            <q-card>
+              <q-card-section>
+                <div class="text-h6">Approval</div>
+                <div class="row q-mt-md">
+                  <div class="col">
+                    <q-btn 
+                      color="positive" 
+                      icon="check" 
+                      label="Approve" 
+                      @click="approveLaporan" 
+                      :loading="approvalLoading"
+                    />
+                    <q-btn 
+                      color="negative" 
+                      icon="close" 
+                      label="Reject" 
+                      class="q-ml-sm" 
+                      @click="rejectLaporan" 
+                      :loading="approvalLoading"
+                    />
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+        </div>
       </template>
 
       <div v-else class="text-center q-pa-md">
@@ -99,15 +129,24 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useLaporanStore } from 'stores/laporan-store'
+import { useAuthStore } from 'stores/auth-store'
 import { useQuasar } from 'quasar'
 
 const route = useRoute()
+const router = useRouter()
 const laporanStore = useLaporanStore()
+const authStore = useAuthStore()
 const $q = useQuasar()
 const laporan = ref(null)
+const approvalLoading = ref(false)
+
+// Check if current user can approve (EM or USER)
+const userCanApprove = computed(() => {
+  return ['em', 'user'].includes(authStore.user?.role)
+})
 
 const loadLaporan = async () => {
   try {
@@ -141,6 +180,52 @@ const downloadFile = async (file) => {
       type: 'negative',
       message: `Failed to download ${file.name}`
     })
+  }
+}
+
+const approveLaporan = async () => {
+  try {
+    approvalLoading.value = true;
+    console.log(`Approving laporan ${route.params.id}`);
+    await laporanStore.approveLaporan(route.params.id);
+    
+    // Reload laporan detail to see updated status
+    await loadLaporan();
+    
+    $q.notify({
+      type: 'positive',
+      message: 'Laporan berhasil diapprove'
+    });
+    
+    // Navigate back to list after successful approval
+    router.push('/');
+  } catch (error) {
+    console.error('Error approving laporan:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal approve laporan'
+    });
+  } finally {
+    approvalLoading.value = false;
+  }
+}
+
+const rejectLaporan = async () => {
+  try {
+    approvalLoading.value = true
+    await laporanStore.rejectLaporan(route.params.id)
+    $q.notify({
+      type: 'positive',
+      message: 'Laporan berhasil direject'
+    })
+    loadLaporan()
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal reject laporan'
+    })
+  } finally {
+    approvalLoading.value = false
   }
 }
 

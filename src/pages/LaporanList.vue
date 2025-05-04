@@ -15,6 +15,58 @@
         </div>
       </div>
 
+      <!-- Filter Section -->
+      <q-card class="q-mb-md">
+        <q-card-section>
+          <div class="text-subtitle1 q-mb-sm">Filter Laporan</div>
+          <div class="row q-col-gutter-md">
+            <div class="col-12 col-sm-4">
+              <q-select
+                v-model="filters.status"
+                :options="statusOptions"
+                label="Status"
+                clearable
+                emit-value
+                map-options
+                @update:model-value="applyFilters"
+              />
+            </div>
+            <div class="col-12 col-sm-4">
+              <q-input
+                v-model="filters.startDate"
+                label="Tanggal Mulai"
+                type="date"
+                @update:model-value="applyFilters"
+              />
+            </div>
+            <div class="col-12 col-sm-4">
+              <q-input
+                v-model="filters.endDate"
+                label="Tanggal Akhir"
+                type="date"
+                @update:model-value="applyFilters"
+              />
+            </div>
+          </div>
+          <div class="row q-mt-md">
+            <div class="col-auto">
+              <q-btn
+                color="primary"
+                label="Terapkan Filter"
+                @click="applyFilters"
+              />
+              <q-btn
+                flat
+                color="grey"
+                label="Reset"
+                class="q-ml-sm"
+                @click="resetFilters"
+              />
+            </div>
+          </div>
+        </q-card-section>
+      </q-card>
+
       <q-card>
         <q-table
           :rows="laporanList"
@@ -65,6 +117,14 @@
               {{ formatDate(props.row.createdAt) }}
             </q-td>
           </template>
+
+          <template v-slot:body-cell-status="props">
+            <q-td :props="props">
+              <q-badge :color="getStatusColor(props.row.status)">
+                {{ formatStatus(props.row.status) }}
+              </q-badge>
+            </q-td>
+          </template>
         </q-table>
       </q-card>
     </div>
@@ -99,6 +159,19 @@ const laporanList = ref([])
 const showDeleteConfirm = ref(false)
 const selectedLaporan = ref(null)
 
+// Filter state
+const filters = ref({
+  status: null,
+  startDate: null,
+  endDate: null
+})
+
+const statusOptions = [
+  { label: 'Draft', value: 'draft' },
+  { label: 'Approved', value: 'approved' },
+  { label: 'Not Approved', value: 'not_approved' }
+]
+
 const columns = [
   {
     name: 'nomorBarang',
@@ -125,6 +198,14 @@ const columns = [
     sortable: true
   },
   {
+    name: 'status',
+    required: true,
+    label: 'Status',
+    align: 'left',
+    field: 'status',
+    sortable: true
+  },
+  {
     name: 'createdAt',
     required: true,
     label: 'Tanggal Dibuat',
@@ -145,6 +226,24 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('id-ID')
 }
 
+const formatStatus = (status) => {
+  const statusMap = {
+    'draft': 'Draft',
+    'approved': 'Disetujui',
+    'not_approved': 'Ditolak'
+  }
+  return statusMap[status] || status
+}
+
+const getStatusColor = (status) => {
+  const colorMap = {
+    'draft': 'blue',
+    'approved': 'positive',
+    'not_approved': 'negative'
+  }
+  return colorMap[status] || 'grey'
+}
+
 const loadLaporanList = async () => {
   loading.value = true
   try {
@@ -159,6 +258,32 @@ const loadLaporanList = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const applyFilters = async () => {
+  loading.value = true
+  try {
+    console.log('Applying filters:', filters.value)
+    const data = await laporanStore.filterLaporan(filters.value)
+    laporanList.value = data
+  } catch (error) {
+    console.error('Error filtering laporan:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal menerapkan filter'
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+const resetFilters = () => {
+  filters.value = {
+    status: null,
+    startDate: null,
+    endDate: null
+  }
+  loadLaporanList()
 }
 
 const viewDetail = (row) => {

@@ -5,7 +5,9 @@ import { androidLog } from './logger';
 import { Capacitor } from '@capacitor/core';
 
 const isNative = Capacitor.isNativePlatform();
-const BASE_URL = 'http://p4sksg888k4s0okcgcwg4wks.152.53.231.3.sslip.io';
+// const BASE_URL = 'http://p4sksg888k4s0okcgcwg4wks.152.53.231.3.sslip.io';
+const BASE_URL = 'http://localhost:3000';
+
 
 // Buat custom axios-like client menggunakan CapacitorHttp
 export const capacitorClient = {
