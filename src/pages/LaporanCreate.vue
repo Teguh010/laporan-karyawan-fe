@@ -3,7 +3,7 @@
     <div class="q-pa-md">
       <h5 class="q-mt-none">Buat Laporan Baru</h5>
       
-      <q-form @submit="onSubmit" class="q-gutter-md">
+      <q-form @submit.prevent class="q-gutter-md">
         <!-- Form Fields -->
         <q-input
           v-model="form.namaBarang"
@@ -63,10 +63,11 @@
           />
         </div>
 
-        <div>
-          <q-btn type="submit" color="primary" label="Submit" :loading="loading" />
+        <div class="row q-gutter-md">
+          <q-btn color="grey" label="Save" :loading="loading" @click="onSave" />
+          <q-btn color="primary" label="Submit" :loading="loading" @click="onSubmit" />
+          <q-btn flat label="Print PDF" color="primary" @click="generatePdf" />
         </div>
-         <q-btn flat label="Print PDF" color="primary" @click="generatePdf" />
       </q-form>
     </div>
 
@@ -118,36 +119,65 @@ const onFileSelected = (file, type, index) => {
   console.log(`File selected for ${type}:`, file)
 }
 
-const onSubmit = async () => {
+const prepareFormData = () => {
+  const formData = new FormData()
+  
+  // Append form fields
+  Object.keys(form.value).forEach(key => {
+    formData.append(key, form.value[key])
+  })
+
+  // Append Need Approve files
+  needApproveFiles.value.forEach((file) => {
+    if (file) {
+      formData.append('needApproveFiles', file)
+    }
+  })
+
+  // Append No Need Approve files
+  noNeedApproveFiles.value.forEach((file) => {
+    if (file) {
+      formData.append('noNeedApproveFiles', file)
+    }
+  })
+  
+  return formData
+}
+
+const onSave = async () => {
   try {
     loading.value = true
-    
-    const formData = new FormData()
-    
-    // Append form fields
-    Object.keys(form.value).forEach(key => {
-      formData.append(key, form.value[key])
-    })
-
-    // Append Need Approve files
-    needApproveFiles.value.forEach((file) => {
-      if (file) {
-        formData.append('needApproveFiles', file)
-      }
-    })
-
-    // Append No Need Approve files
-    noNeedApproveFiles.value.forEach((file) => {
-      if (file) {
-        formData.append('noNeedApproveFiles', file)
-      }
-    })
-
-    const result = await laporanStore.createLaporan(formData)
+    const formData = prepareFormData()
+    console.log('Saving form with isSubmitted=false')
+    const result = await laporanStore.createLaporan(formData, false)
     
     $q.notify({
       type: 'positive',
-      message: 'Laporan berhasil dibuat'
+      message: 'Laporan berhasil disimpan sebagai draft'
+    })
+    
+    router.push(`/${result.id}`)
+  } catch (error) {
+    console.error('Error saving form:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Terjadi kesalahan saat menyimpan laporan'
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+const onSubmit = async () => {
+  try {
+    loading.value = true
+    const formData = prepareFormData()
+    console.log('Submitting form with isSubmitted=true')
+    const result = await laporanStore.createLaporan(formData, true)
+    
+    $q.notify({
+      type: 'positive',
+      message: 'Laporan berhasil disubmit'
     })
 
     // Show PDF preview
@@ -160,12 +190,11 @@ const onSubmit = async () => {
         router.push(`/${result.id}`)
       }
     })
-
   } catch (error) {
     console.error('Error submitting form:', error)
     $q.notify({
       type: 'negative',
-      message: 'Terjadi kesalahan saat membuat laporan'
+      message: 'Terjadi kesalahan saat submit laporan'
     })
   } finally {
     loading.value = false

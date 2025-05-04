@@ -10,14 +10,22 @@ export const useLaporanStore = defineStore('laporan', {
   }),
 
   actions: {
-    async createLaporan(formData) {
+    async createLaporan(formData, isSubmitted = false) {
       try {
         this.loading = true;
-        const response = await api.post('/laporan', formData, {
+        console.log(`Creating laporan with isSubmitted: ${isSubmitted}`);
+        
+        // Gunakan URL dengan parameter query yang benar
+        const url = `/laporan${isSubmitted ? '?submit=true' : ''}`;
+        console.log(`Request URL: ${url}`);
+        
+        const response = await api.post(url, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
+        
+        console.log('Create response:', response.data);
         this.currentLaporan = response.data;
         return response.data;
       } catch (error) {
@@ -139,6 +147,22 @@ export const useLaporanStore = defineStore('laporan', {
         return response.data;
       } catch (error) {
         console.error('Error filtering laporan:', error);
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async submitLaporan(id) {
+      try {
+        this.loading = true;
+        console.log(`Submitting laporan with ID: ${id}`);
+        const response = await api.put(`/laporan/${id}/submit`);
+        console.log('Submit response:', response.data);
+        return response.data;
+      } catch (error) {
+        console.error('Error submitting laporan:', error);
         this.error = error.message;
         throw error;
       } finally {

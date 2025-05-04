@@ -89,8 +89,27 @@
           </div>
         </div>
 
-        <!-- Tambahkan tombol approval di bagian yang sesuai -->
-        <div class="row q-mt-md" v-if="userCanApprove">
+        <!-- Tambahkan tombol Submit jika status masih 'entry' -->
+        <div class="row q-mt-md" v-if="laporan.status === 'entry'">
+          <div class="col-12">
+            <q-card>
+              <q-card-section>
+                <div class="text-h6">Submit Laporan</div>
+                <p>Laporan ini masih dalam status draft. Klik tombol di bawah untuk submit laporan.</p>
+                <q-btn 
+                  color="primary" 
+                  icon="send" 
+                  label="Submit Laporan" 
+                  @click="submitLaporan" 
+                  :loading="submitLoading"
+                />
+              </q-card-section>
+            </q-card>
+          </div>
+        </div>
+
+        <!-- Tombol approval hanya muncul jika status 'submitted' -->
+        <div class="row q-mt-md" v-if="laporan.status === 'submitted' && userCanApprove">
           <div class="col-12">
             <q-card>
               <q-card-section>
@@ -142,6 +161,7 @@ const authStore = useAuthStore()
 const $q = useQuasar()
 const laporan = ref(null)
 const approvalLoading = ref(false)
+const submitLoading = ref(false)
 
 // Check if current user can approve (EM or USER)
 const userCanApprove = computed(() => {
@@ -226,6 +246,28 @@ const rejectLaporan = async () => {
     })
   } finally {
     approvalLoading.value = false
+  }
+}
+
+const submitLaporan = async () => {
+  try {
+    submitLoading.value = true
+    console.log(`Submitting laporan with ID: ${route.params.id}`)
+    await laporanStore.submitLaporan(route.params.id)
+    $q.notify({
+      type: 'positive',
+      message: 'Laporan berhasil disubmit'
+    })
+    // Reload laporan untuk mendapatkan status terbaru
+    await loadLaporan()
+  } catch (error) {
+    console.error('Error submitting laporan:', error)
+    $q.notify({
+      type: 'negative',
+      message: `Gagal submit laporan: ${error.message || 'Unknown error'}`
+    })
+  } finally {
+    submitLoading.value = false
   }
 }
 

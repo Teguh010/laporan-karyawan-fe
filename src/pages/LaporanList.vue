@@ -74,6 +74,9 @@
           row-key="id"
           :loading="loading"
           @row-click="onRowClick"
+          :rows-per-page-options="[10, 20, 50]"
+          :pagination="pagination"
+          @update:pagination="pagination = $event"
         >
           <template v-slot:loading>
             <q-inner-loading showing color="primary">
@@ -167,7 +170,8 @@ const filters = ref({
 })
 
 const statusOptions = [
-  { label: 'Draft', value: 'draft' },
+  { label: 'Entry', value: 'entry' },
+  { label: 'Submitted', value: 'submitted' },
   { label: 'Approved', value: 'approved' },
   { label: 'Not Approved', value: 'not_approved' }
 ]
@@ -228,16 +232,18 @@ const formatDate = (dateString) => {
 
 const formatStatus = (status) => {
   const statusMap = {
-    'draft': 'Draft',
-    'approved': 'Disetujui',
-    'not_approved': 'Ditolak'
+    'entry': 'Entry',
+    'submitted': 'Submitted',
+    'approved': 'Approved',
+    'not_approved': 'Rejected'
   }
   return statusMap[status] || status
 }
 
 const getStatusColor = (status) => {
   const colorMap = {
-    'draft': 'blue',
+    'entry': 'grey',
+    'submitted': 'blue',
     'approved': 'positive',
     'not_approved': 'negative'
   }
@@ -315,6 +321,13 @@ const deleteLaporan = async () => {
     })
   }
 }
+
+// Tambahkan state pagination
+const pagination = ref({
+  rowsPerPage: 10,
+  sortBy: 'createdAt',
+  descending: true
+})
 
 onMounted(() => {
   loadLaporanList()
