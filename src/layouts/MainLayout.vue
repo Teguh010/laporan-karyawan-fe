@@ -13,6 +13,9 @@
 
         <q-toolbar-title>
           Laporan Karyawan
+          <q-badge v-if="authStore.user" color="secondary" class="q-ml-sm">
+            {{ authStore.user.role.toUpperCase() }}
+          </q-badge>
         </q-toolbar-title>
 
         <q-btn
