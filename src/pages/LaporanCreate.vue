@@ -5,23 +5,151 @@
       
       <q-form @submit.prevent class="q-gutter-md">
         <!-- Form Fields -->
-        <q-input
-          v-model="form.namaBarang"
-          label="Nama Barang"
-          :rules="[val => !!val || 'Field is required']"
-        />
-        
-        <q-input
-          v-model="form.nomorBarang"
-          label="Nomor Barang"
-          :rules="[val => !!val || 'Field is required']"
-        />
-        
-        <q-input
-          v-model="form.noSurat"
-          label="Nomor Surat"
-          :rules="[val => !!val || 'Field is required']"
-        />
+        <div class="row q-col-gutter-md">
+          <div class="col-12">
+            <q-input
+              v-model="form.requestId"
+              label="Request ID"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-12">
+            <q-input
+              v-model="form.title"
+              label="Title"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-12">
+            <q-input
+              v-model="form.requestName"
+              label="Request Name"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-12">
+            <q-input
+              v-model="form.companyCode"
+              label="Company Code"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-12">
+            <q-input
+              v-model="form.requestObjective"
+              label="Request Objective"
+              type="textarea"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-12">
+            <q-input
+              v-model="form.requestBackground"
+              label="Request Background"
+              type="textarea"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-6">
+            <q-select
+              v-model="form.poType"
+              label="PO Type"
+              :options="['purchase_order', 'direct_purchase']"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-6">
+            <q-select
+              v-model="form.assetType"
+              label="Asset Type"
+              :options="['fixed_asset', 'consumable']"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-6">
+            <q-input
+              v-model.number="form.totalAmountIdr"
+              label="Total Amount (IDR)"
+              type="number"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-6">
+            <q-input
+              v-model.number="form.totalAmountOriginalCurrency"
+              label="Total Amount (Original Currency)"
+              type="number"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-12">
+            <q-input
+              v-model="form.remarks"
+              label="Remarks"
+              type="textarea"
+            />
+          </div>
+          
+          <div class="col-12">
+            <q-input
+              v-model="form.assignTo"
+              label="Assign To"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-6">
+            <q-input
+              v-model="form.requestDate"
+              label="Request Date"
+              type="date"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-6">
+            <q-input
+              v-model="form.deliveryDate"
+              label="Delivery Date"
+              type="date"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-12">
+            <q-input
+              v-model="form.department"
+              label="Department"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-6">
+            <q-input
+              v-model="form.buyer"
+              label="Buyer"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+          
+          <div class="col-6">
+            <q-input
+              v-model="form.currency"
+              label="Currency"
+              :rules="[val => !!val || 'Field is required']"
+            />
+          </div>
+        </div>
 
         <!-- Need Approve Files -->
         <div class="q-mb-md">
@@ -106,9 +234,23 @@ const showPdfPreview = ref(false)
 const pdfTemplate = ref(null)
 
 const form = ref({
-  namaBarang: '',
-  nomorBarang: '',
-  noSurat: ''
+  requestId: '',
+  title: '',
+  requestName: '',
+  companyCode: '',
+  requestObjective: '',
+  requestBackground: '',
+  poType: 'purchase_order',
+  assetType: 'fixed_asset',
+  totalAmountIdr: 0,
+  totalAmountOriginalCurrency: 0,
+  remarks: '',
+  assignTo: '',
+  requestDate: new Date(),
+  department: '',
+  buyer: '',
+  deliveryDate: new Date(),
+  currency: 'IDR'
 })
 
 const needApproveFiles = ref([null])

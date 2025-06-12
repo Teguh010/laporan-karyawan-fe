@@ -11,26 +11,74 @@
       <hr class="divider">
     </div>
 
-    <!-- Nomor Surat dan Tanggal -->
-    <div class="letter-info">
-      <p>Nomor: {{ data.noSurat }}</p>
-      <p>Tanggal: {{ new Date().toLocaleDateString('id-ID') }}</p>
+    <!-- Request Information -->
+    <div class="request-info">
+      <p>Request ID: {{ data.requestId }}</p>
+      <p>Request Date: {{ new Date(data.requestDate).toLocaleDateString('id-ID') }}</p>
     </div>
 
     <!-- Konten Surat -->
     <div class="content">
-      <h3 class="text-center">LAPORAN BARANG</h3>
+      <h3 class="text-center">LAPORAN PERMINTAAN BARANG</h3>
       
       <div class="data-section">
         <table>
           <tbody>
             <tr>
-              <td width="150">Nama Barang</td>
-              <td>: {{ data.namaBarang }}</td>
+              <td width="150">Title</td>
+              <td>: {{ data.title }}</td>
             </tr>
             <tr>
-              <td>Nomor Barang</td>
-              <td>: {{ data.nomorBarang }}</td>
+              <td>Request Name</td>
+              <td>: {{ data.requestName }}</td>
+            </tr>
+            <tr>
+              <td>Company Code</td>
+              <td>: {{ data.companyCode }}</td>
+            </tr>
+            <tr>
+              <td>Request Objective</td>
+              <td>: {{ data.requestObjective }}</td>
+            </tr>
+            <tr>
+              <td>Request Background</td>
+              <td>: {{ data.requestBackground }}</td>
+            </tr>
+            <tr>
+              <td>PO Type</td>
+              <td>: {{ data.poType }}</td>
+            </tr>
+            <tr>
+              <td>Asset Type</td>
+              <td>: {{ data.assetType }}</td>
+            </tr>
+            <tr>
+              <td>Total Amount (IDR)</td>
+              <td>: IDR {{ data.totalAmountIdr.toLocaleString() }}</td>
+            </tr>
+            <tr>
+              <td>Total Amount ({{ data.currency }})</td>
+              <td>: {{ data.currency }} {{ data.totalAmountOriginalCurrency.toLocaleString() }}</td>
+            </tr>
+            <tr>
+              <td>Remarks</td>
+              <td>: {{ data.remarks }}</td>
+            </tr>
+            <tr>
+              <td>Assign To</td>
+              <td>: {{ data.assignTo }}</td>
+            </tr>
+            <tr>
+              <td>Department</td>
+              <td>: {{ data.department }}</td>
+            </tr>
+            <tr>
+              <td>Buyer</td>
+              <td>: {{ data.buyer }}</td>
+            </tr>
+            <tr>
+              <td>Delivery Date</td>
+              <td>: {{ new Date(data.deliveryDate).toLocaleDateString('id-ID') }}</td>
             </tr>
           </tbody>
         </table>
@@ -38,7 +86,7 @@
 
       <!-- Keterangan Template -->
       <div class="description">
-        <p>Dengan ini kami menyatakan bahwa barang tersebut di atas telah tercatat dalam sistem inventaris perusahaan.</p>
+        <p>Berikut adalah detail permintaan barang yang diajukan:</p>
       </div>
     </div>
 
