@@ -76,18 +76,18 @@
           
           <div class="col-6">
             <q-input
-              v-model.number="form.totalAmountIdr"
+              v-model="form.totalAmountIdr"
               label="Total Amount (IDR)"
-              type="number"
+              type="text"
               :rules="[val => !!val || 'Field is required']"
             />
           </div>
           
           <div class="col-6">
             <q-input
-              v-model.number="form.totalAmountOriginalCurrency"
+              v-model="form.totalAmountOriginalCurrency"
               label="Total Amount (Original Currency)"
-              type="number"
+              type="text"
               :rules="[val => !!val || 'Field is required']"
             />
           </div>
@@ -114,6 +114,7 @@
               label="Request Date"
               type="date"
               :rules="[val => !!val || 'Field is required']"
+              @input="formatDateInput('requestDate')"
             />
           </div>
           
@@ -123,6 +124,7 @@
               label="Delivery Date"
               type="date"
               :rules="[val => !!val || 'Field is required']"
+              @input="formatDateInput('deliveryDate')"
             />
           </div>
           
@@ -221,6 +223,12 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+
+// Helper function to format date to ISO string
+function formatDateToISO(date) {
+  const d = new Date(date)
+  return d.toISOString().split('T')[0]
+}
 import { useQuasar } from 'quasar'
 import { useLaporanStore } from 'stores/laporan-store'
 import html2pdf from 'html2pdf.js'
@@ -240,18 +248,26 @@ const form = ref({
   companyCode: '',
   requestObjective: '',
   requestBackground: '',
-  poType: 'purchase_order',
-  assetType: 'fixed_asset',
-  totalAmountIdr: 0,
-  totalAmountOriginalCurrency: 0,
+  poType: '',
+  assetType: '',
+  totalAmountIdr: '',
+  totalAmountOriginalCurrency: '',
   remarks: '',
   assignTo: '',
-  requestDate: new Date(),
+  requestDate: '',
+  deliveryDate: '',
   department: '',
   buyer: '',
-  deliveryDate: new Date(),
-  currency: 'IDR'
+  currency: ''
 })
+
+// Format date input to ISO format
+function formatDateInput(fieldName) {
+  const date = form.value[fieldName]
+  if (date) {
+    form.value[fieldName] = formatDateToISO(date)
+  }
+}
 
 const needApproveFiles = ref([null])
 const noNeedApproveFiles = ref([null])

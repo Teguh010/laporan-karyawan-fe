@@ -4,40 +4,93 @@
       <template v-if="laporan">
         <div class="row q-col-gutter-md">
           <div class="col-12">
-            <q-card>
-              <q-card-section>
-                <div class="text-h6">Detail Laporan</div>
-                <q-list>
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label caption>Nama Barang</q-item-label>
-                      <q-item-label>{{ laporan.namaBarang }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label caption>Nomor Barang</q-item-label>
-                      <q-item-label>{{ laporan.nomorBarang }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                  
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label caption>Nomor Surat</q-item-label>
-                      <q-item-label>{{ laporan.noSurat }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-
-                  <q-item>
-                    <q-item-section>
-                      <q-item-label caption>Tanggal Dibuat</q-item-label>
-                      <q-item-label>{{ new Date(laporan.createdAt).toLocaleDateString('id-ID') }}</q-item-label>
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-              </q-card-section>
-            </q-card>
+            <div class="text-h6 q-mb-md">Detail Laporan</div>
+            <div class="row q-col-gutter-md">
+              <div class="col-6">
+                <q-card class="q-mb-md">
+                  <q-card-section>
+                    <div class="q-table__container">
+                      <table class="q-table q-table--bordered q-table--dense">
+                        <tbody>
+                          <tr>
+                            <td class="text-weight-medium">Request ID</td>
+                            <td>{{ laporan.requestId }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">Title</td>
+                            <td>{{ laporan.title }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">Request Name</td>
+                            <td>{{ laporan.requestName }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">Company Code</td>
+                            <td>{{ laporan.companyCode }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">PO Type</td>
+                            <td>{{ laporan.poType }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">Asset Type</td>
+                            <td>{{ laporan.assetType }}</td>
+                          </tr>
+                            <tr>
+                            <td class="text-weight-medium">Request Objective</td>
+                            <td>{{ laporan.requestObjective }}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </div>
+              <div class="col-6">
+                <q-card class="q-mb-md">
+                  <q-card-section>
+                    <div class="q-table__container">
+                      <table class="q-table q-table--bordered q-table--dense">
+                        <tbody>
+                           <tr>
+                            <td class="text-weight-medium">Request Background</td>
+                            <td>{{ laporan.requestBackground }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">Total Amount (IDR)</td>
+                            <td>{{ formatNumber(laporan.totalAmountIdr) }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">Total Amount (Original Currency)</td>
+                            <td>{{ formatNumber(laporan.totalAmountOriginalCurrency) }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">Request Date</td>
+                            <td>{{ formatDate(laporan.requestDate) }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">Delivery Date</td>
+                            <td>{{ formatDate(laporan.deliveryDate) }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">Department</td>
+                            <td>{{ laporan.department }}</td>
+                          </tr>
+                          <tr>
+                            <td class="text-weight-medium">Status</td>
+                            <td>
+                              <q-badge :color="getStatusColor(laporan.status)">
+                                {{ getStatusLabel(laporan.status) }}
+                              </q-badge>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </div>
+            </div>
           </div>
 
           <!-- Need Approve Files -->
@@ -159,6 +212,42 @@ const router = useRouter()
 const laporanStore = useLaporanStore()
 const authStore = useAuthStore()
 const $q = useQuasar()
+
+// Helper functions
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString('id-ID')
+}
+
+const formatNumber = (numberString) => {
+  if (!numberString) return '0'
+  const number = Number(numberString)
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR'
+  }).format(number)
+}
+
+const getStatusColor = (status) => {
+  const colorMap = {
+    'entry': 'grey',
+    'submitted': 'blue',
+    'approved': 'positive',
+    'not_approved': 'negative'
+  }
+  return colorMap[status] || 'grey'
+}
+
+const getStatusLabel = (status) => {
+  const statusMap = {
+    'entry': 'Entry',
+    'submitted': 'Submitted',
+    'approved': 'Approved',
+    'not_approved': 'Rejected'
+  }
+  return statusMap[status] || status
+}
+
 const laporan = ref(null)
 const approvalLoading = ref(false)
 const submitLoading = ref(false)

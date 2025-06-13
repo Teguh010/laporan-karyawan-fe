@@ -14,7 +14,7 @@
     <!-- Request Information -->
     <div class="request-info">
       <p>Request ID: {{ data.requestId }}</p>
-      <p>Request Date: {{ new Date(data.requestDate).toLocaleDateString('id-ID') }}</p>
+      <p>Request Date: {{ formatDate(data.requestDate) }}</p>
     </div>
 
     <!-- Konten Surat -->
@@ -54,11 +54,11 @@
             </tr>
             <tr>
               <td>Total Amount (IDR)</td>
-              <td>: IDR {{ data.totalAmountIdr.toLocaleString() }}</td>
+              <td>: {{ formatNumber(data.totalAmountIdr) }}</td>
             </tr>
             <tr>
               <td>Total Amount ({{ data.currency }})</td>
-              <td>: {{ data.currency }} {{ data.totalAmountOriginalCurrency.toLocaleString() }}</td>
+              <td>: {{ formatNumber(data.totalAmountOriginalCurrency) }}</td>
             </tr>
             <tr>
               <td>Remarks</td>
@@ -78,7 +78,7 @@
             </tr>
             <tr>
               <td>Delivery Date</td>
-              <td>: {{ new Date(data.deliveryDate).toLocaleDateString('id-ID') }}</td>
+              <td>: {{ formatDate(data.deliveryDate) }}</td>
             </tr>
           </tbody>
         </table>
@@ -93,7 +93,7 @@
     <!-- Tanda Tangan -->
     <div class="signature">
       <div class="signature-section">
-        <p>Jakarta, {{ new Date().toLocaleDateString('id-ID') }}</p>
+        <p>Jakarta, {{ formatDate(new Date()) }}</p>
         <p>Mengetahui,</p>
         <div class="signature-box"></div>
         <p>( ............................ )</p>
@@ -112,6 +112,20 @@ export default defineComponent({
     data: {
       type: Object,
       required: true
+    }
+  },
+  methods: {
+    formatDate(dateString) {
+      if (!dateString) return ''
+      return new Date(dateString).toLocaleDateString('id-ID')
+    },
+    formatNumber(numberString) {
+      if (!numberString) return '0'
+      const number = Number(numberString)
+      return new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR'
+      }).format(number)
     }
   }
 })

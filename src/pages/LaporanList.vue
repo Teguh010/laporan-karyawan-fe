@@ -153,6 +153,21 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useLaporanStore } from 'stores/laporan-store'
 
+// Helper functions
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  return new Date(dateString).toLocaleDateString('id-ID')
+}
+
+const formatNumber = (numberString) => {
+  if (!numberString) return '0'
+  const number = Number(numberString)
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR'
+  }).format(number)
+}
+
 const router = useRouter()
 const $q = useQuasar()
 const laporanStore = useLaporanStore()
@@ -178,28 +193,55 @@ const statusOptions = [
 
 const columns = [
   {
-    name: 'nomorBarang',
+    name: 'requestId',
     required: true,
-    label: 'Nomor Barang',
+    label: 'Request ID',
     align: 'left',
-    field: 'nomorBarang',
+    field: 'requestId',
     sortable: true
   },
   {
-    name: 'namaBarang',
+    name: 'title',
     required: true,
-    label: 'Nama Barang',
+    label: 'Title',
     align: 'left',
-    field: 'namaBarang',
+    field: 'title',
     sortable: true
   },
   {
-    name: 'noSurat',
+    name: 'requestName',
     required: true,
-    label: 'Nomor Surat',
+    label: 'Request Name',
     align: 'left',
-    field: 'noSurat',
+    field: 'requestName',
     sortable: true
+  },
+  {
+    name: 'requestDate',
+    required: true,
+    label: 'Request Date',
+    align: 'left',
+    field: 'requestDate',
+    sortable: true,
+    format: formatDate
+  },
+  {
+    name: 'deliveryDate',
+    required: true,
+    label: 'Delivery Date',
+    align: 'left',
+    field: 'deliveryDate',
+    sortable: true,
+    format: formatDate
+  },
+  {
+    name: 'totalAmountIdr',
+    required: true,
+    label: 'Total Amount (IDR)',
+    align: 'right',
+    field: 'totalAmountIdr',
+    sortable: true,
+    format: formatNumber
   },
   {
     name: 'status',
@@ -207,15 +249,17 @@ const columns = [
     label: 'Status',
     align: 'left',
     field: 'status',
-    sortable: true
+    sortable: true,
+    format: (val) => formatStatus(val)
   },
   {
     name: 'createdAt',
     required: true,
-    label: 'Tanggal Dibuat',
+    label: 'Created At',
     align: 'left',
     field: 'createdAt',
-    sortable: true
+    sortable: true,
+    format: formatDate
   },
   {
     name: 'actions',
@@ -225,10 +269,6 @@ const columns = [
     field: 'actions'
   }
 ]
-
-const formatDate = (dateString) => {
-  return new Date(dateString).toLocaleDateString('id-ID')
-}
 
 const formatStatus = (status) => {
   const statusMap = {
