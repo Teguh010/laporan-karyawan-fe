@@ -79,9 +79,14 @@
                           <tr>
                             <td class="text-weight-medium">Status</td>
                             <td>
-                              <q-badge :color="getStatusColor(laporan.status)">
-                                {{ getStatusLabel(laporan.status) }}
-                              </q-badge>
+                              <div class="column items-start">
+                                <q-badge :color="getStatusColor(laporan.status)" class="q-mb-xs">
+                                  {{ getStatusLabel(laporan.status) }}
+                                </q-badge>
+                                <div v-if="laporan.resubmissionCount > 0" class="text-caption text-grey-7">
+                                  Resubmitted {{ laporan.resubmissionCount }} time{{ laporan.resubmissionCount > 1 ? 's' : '' }}
+                                </div>
+                              </div>
                             </td>
                           </tr>
                         </tbody>
@@ -234,11 +239,13 @@
         </div>
 
         <!-- Resubmit Button for Rejected Laporan -->
-        <div class="row q-mt-md" v-if="laporan.status === 'rejected' && isVendor">
+        <div class="row q-mt-md" v-if="(laporan.status === 'rejected' || laporan.status === 'resubmitted') && isVendor">
           <div class="col-12">
-            <q-card>
+            <q-card :class="{'bg-blue-1': laporan.status === 'resubmitted'}">
               <q-card-section>
-                <div class="text-h6">Laporan Ditolak</div>
+                <div class="text-h6">
+                  {{ laporan.status === 'rejected' ? 'Laporan Ditolak' : 'Menunggu Persetujuan' }}
+                </div>
                 <p class="text-negative" v-if="laporan.rejectReason">
                   <strong>Alasan Penolakan:</strong> {{ laporan.rejectReason }}
                 </p>
@@ -448,13 +455,18 @@ const formatNumber = (number) => {
 };
 
 const getStatusColor = (status) => {
-  switch (status) {
+  if (!status) return 'grey';
+  switch (status.toLowerCase()) {
     case 'submitted':
       return 'blue';
+    case 'resubmitted':
+      return 'deep-purple';
     case 'approved':
       return 'positive';
     case 'rejected':
       return 'negative';
+    case 'entry':
+      return 'grey';
     default:
       return 'grey';
   }
@@ -464,12 +476,14 @@ const getStatusLabel = (status) => {
   switch (status) {
     case 'submitted':
       return 'Submitted';
+    case 'resubmitted':
+      return 'Resubmitted';
     case 'approved':
       return 'Approved';
     case 'rejected':
       return 'Rejected';
     case 'entry':
-      return 'entry';
+      return 'Entry';
     default:
       return status;
   }
@@ -577,11 +591,19 @@ const cancelApproval = async () => {
 const submitLaporan = async () => {
   try {
     submitLoading.value = true;
-    await laporanStore.submitLaporan(laporan.value.id);
+    
+    // Gunakan resubmit jika laporan pernah di-reject
+    if (laporan.value.status === 'rejected') {
+      await laporanStore.resubmitLaporan(laporan.value.id);
+    } else {
+      await laporanStore.submitLaporan(laporan.value.id);
+    }
     
     $q.notify({
       type: 'positive',
-      message: 'Laporan berhasil disubmit',
+      message: laporan.value.status === 'rejected' 
+        ? 'Laporan berhasil dikirim ulang untuk persetujuan' 
+        : 'Laporan berhasil disubmit',
       position: 'top'
     });
     
@@ -591,7 +613,7 @@ const submitLaporan = async () => {
     console.error('Error submitting laporan:', error);
     $q.notify({
       type: 'negative',
-      message: error.message || 'Gagal mensubmit laporan',
+      message: error.response?.data?.message || error.message || 'Gagal memproses laporan',
       position: 'top'
     });
   } finally {

@@ -187,8 +187,9 @@ const filters = ref({
 const statusOptions = [
   { label: 'Entry', value: 'entry' },
   { label: 'Submitted', value: 'submitted' },
+  { label: 'Resubmitted', value: 'resubmitted' },
   { label: 'Approved', value: 'approved' },
-  { label: 'Not Approved', value: 'not_approved' }
+  { label: 'Rejected', value: 'rejected' }
 ]
 
 const columns = [
@@ -274,8 +275,10 @@ const formatStatus = (status) => {
   const statusMap = {
     'entry': 'Entry',
     'submitted': 'Submitted',
+    'resubmitted': 'Resubmitted',
     'approved': 'Approved',
-    'not_approved': 'Rejected'
+    'rejected': 'Rejected',
+    'not_approved': 'Rejected' // Untuk kompatibilitas ke belakang
   }
   return statusMap[status] || status
 }
@@ -284,8 +287,10 @@ const getStatusColor = (status) => {
   const colorMap = {
     'entry': 'grey',
     'submitted': 'blue',
+    'resubmitted': 'deep-purple',
     'approved': 'positive',
-    'not_approved': 'negative'
+    'rejected': 'negative',
+    'not_approved': 'negative' // Untuk kompatibilitas ke belakang
   }
   return colorMap[status] || 'grey'
 }

@@ -261,7 +261,9 @@ const form = ref({
   deliveryDate: '',
   department: '',
   buyer: '',
-  currency: ''
+  currency: '',
+  status: 'entry', // Default status for new reports
+  resubmissionCount: 0
 })
 
 // Load laporan data for edit
@@ -274,11 +276,24 @@ const loadLaporanData = async () => {
     
     // Map laporan data to form
     if (laporan) {
+      // Copy all fields except status and resubmissionCount
+      const { status, resubmissionCount, ...laporanData } = laporan
+      
+      // Set form values
       Object.keys(form.value).forEach(key => {
-        if (laporan[key] !== undefined) {
-          form.value[key] = laporan[key]
+        if (laporanData[key] !== undefined) {
+          form.value[key] = laporanData[key]
         }
       })
+      
+      // Set status and resubmission count
+      if (status === 'rejected') {
+        form.value.status = 'resubmitted'
+        form.value.resubmissionCount = (resubmissionCount || 0) + 1
+      } else {
+        form.value.status = status
+        form.value.resubmissionCount = resubmissionCount || 0
+      }
     }
     
     // Handle dates
@@ -405,18 +420,38 @@ const onUpdate = async () => {
   try {
     loading.value = true
     const formData = prepareFormData()
-    await laporanStore.updateLaporan(laporanId.value, formData)
-    $q.notify({
-      type: 'positive',
-      message: 'Laporan berhasil diperbarui',
-      position: 'top'
-    })
+    
+    console.log('Updating laporan with data:', formData)
+    
+    // If this is a resubmission (status is 'resubmitted'), handle it specially
+    if (formData.status === 'resubmitted') {
+      console.log('Processing resubmission')
+      
+      // Just call resubmitLaporan which should handle both the update and status change
+      await laporanStore.resubmitLaporan(laporanId.value, formData)
+      
+      $q.notify({
+        type: 'positive',
+        message: 'Laporan berhasil dikirim ulang untuk persetujuan',
+        position: 'top'
+      })
+    } else {
+      // Regular update
+      console.log('Processing regular update')
+      await laporanStore.updateLaporan(laporanId.value, formData)
+      $q.notify({
+        type: 'positive',
+        message: 'Laporan berhasil diperbarui',
+        position: 'top'
+      })
+    }
+    
     router.push(`/laporan/${laporanId.value}`)
   } catch (error) {
     console.error('Error updating laporan:', error)
     $q.notify({
       type: 'negative',
-      message: 'Gagal memperbarui laporan',
+      message: error.response?.data?.message || 'Gagal memperbarui laporan',
       position: 'top'
     })
   } finally {

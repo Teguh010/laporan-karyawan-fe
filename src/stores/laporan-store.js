@@ -167,13 +167,22 @@ export const useLaporanStore = defineStore('laporan', {
     /**
      * Resubmit a rejected laporan for approval
      * @param {string} id - Laporan ID
+     * @param {Object} formData - The updated laporan data
      * @returns {Promise<Object>} Updated laporan
      */
-    async resubmitLaporan(id) {
+    async resubmitLaporan(id, formData) {
       try {
         this.loading = true;
-        console.log(`Resubmitting laporan ${id} for approval`);
+        console.log(`Resubmitting laporan ${id} for approval with data:`, formData);
         
+        // First update the laporan with the new data
+        await api.put(`/laporan/${id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        // Then mark it as resubmitted
         const response = await api.put(`/laporan/${id}/resubmit`);
         console.log('Resubmit response:', response.data);
         
@@ -254,17 +263,30 @@ export const useLaporanStore = defineStore('laporan', {
           ? this.currentLaporan 
           : await this.getLaporanDetail(id);
         
-        // Check if both approvals are present
-        if (!currentLaporan.emApproved || !currentLaporan.userApproved) {
-          throw new Error('Laporan belum disetujui oleh semua pihak yang berwenang');
+        // For resubmission, we don't need to check approvals again
+        if (currentLaporan.status !== 'resubmitted') {
+          // Check if both approvals are present for new submissions
+          if (!currentLaporan.emApproved || !currentLaporan.userApproved) {
+            throw new Error('Laporan belum disetujui oleh semua pihak yang berwenang');
+          }
+          
+          // Check if already submitted
+          if (currentLaporan.status === 'submitted') {
+            throw new Error('Laporan sudah disubmit sebelumnya');
+          }
+          
+          // Check if in entry status
+          if (currentLaporan.status !== 'entry') {
+            throw new Error('Hanya laporan dengan status Entry yang dapat disubmit');
+          }
         }
         
-        // Check if already submitted
-        if (currentLaporan.status === 'submitted') {
-          throw new Error('Laporan sudah disubmit sebelumnya');
-        }
-        
-        const response = await api.put(`/laporan/${id}/submit`);
+        // Use the appropriate endpoint based on current status
+        const endpoint = currentLaporan.status === 'resubmitted' 
+          ? 'resubmit' 
+          : 'submit';
+          
+        const response = await api.put(`/laporan/${id}/${endpoint}`);
         
         // Update current laporan
         if (this.currentLaporan?.id === id) {
