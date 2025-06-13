@@ -39,11 +39,20 @@ const routes = [
       },
       {
         path: 'create',
+        name: 'create-laporan',
         component: () => import('pages/LaporanCreate.vue')
       },
       {
         path: ':id',
-        component: () => import('pages/LaporanDetail.vue')
+        name: 'view-laporan',
+        component: () => import('pages/LaporanDetail.vue'),
+        props: true
+      },
+      {
+        path: 'edit/:id',
+        name: 'edit-laporan',
+        component: () => import('pages/LaporanCreate.vue'),
+        props: { isEdit: true }
       },
       {
         path: 'users',

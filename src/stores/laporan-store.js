@@ -79,34 +79,120 @@ export const useLaporanStore = defineStore('laporan', {
       }
     },
 
-    async approveLaporan(id) {
+    /**
+     * Approve a laporan
+     * @param {string} id - Laporan ID
+     * @param {string} role - User role (EM or USER)
+     * @returns {Promise<Object>} Updated laporan
+     */
+    async approveLaporan(id, role) {
       try {
         this.loading = true;
-        console.log(`Sending approval request for laporan ${id}`);
-        const response = await api.put(`/laporan/${id}/approve`);
+        console.log(`Sending approval request for laporan ${id} as ${role}`);
+        
+        // Validate role (case-insensitive)
+        const normalizedRole = role?.toUpperCase();
+        
+        // Map frontend role to backend field
+        const roleFieldMap = {
+          'EM': 'emApproved',
+          'USER': 'userApproved'  // Sesuai dengan field di backend
+        };
+        
+        if (!roleFieldMap[normalizedRole]) {
+          throw new Error('Role tidak valid untuk approval');
+        }
+        
+        const roleForApi = roleFieldMap[normalizedRole];
+        
+        const response = await api.put(`/laporan/${id}/approve`, { role: roleForApi });
         console.log('Approval response:', response.data);
         
-        // Refresh laporan list after approval
-        await this.getAllLaporan();
+        // Update current laporan if it's the one being approved
+        if (this.currentLaporan?.id === id) {
+          this.currentLaporan = response.data;
+        }
+        
+        // Update in laporan list if it exists there
+        const index = this.laporanList.findIndex(item => item.id === id);
+        if (index !== -1) {
+          this.laporanList[index] = response.data;
+        }
         
         return response.data;
       } catch (error) {
         console.error('Error approving laporan:', error);
-        this.error = error.message;
-        throw error;
+        this.error = error.response?.data?.message || error.message;
+        throw new Error(this.error);
       } finally {
         this.loading = false;
       }
     },
 
-    async rejectLaporan(id) {
+    /**
+     * Reject a laporan
+     * @param {string} id - Laporan ID
+     * @param {string} reason - Alasan penolakan
+     * @returns {Promise<Object>} Updated laporan
+     */
+    async rejectLaporan(id, reason) {
       try {
         this.loading = true;
-        const response = await api.put(`/laporan/${id}/reject`);
+        console.log(`Rejecting laporan ${id} with reason:`, reason);
+        
+        const response = await api.put(`/laporan/${id}/reject`, { reason });
+        console.log('Reject response:', response.data);
+        
+        // Update current laporan if it's the one being rejected
+        if (this.currentLaporan?.id === id) {
+          this.currentLaporan = response.data;
+        }
+        
+        // Update in laporan list if it exists there
+        const index = this.laporanList.findIndex(item => item.id === id);
+        if (index !== -1) {
+          this.laporanList[index] = response.data;
+        }
+        
         return response.data;
       } catch (error) {
-        this.error = error.message;
-        throw error;
+        console.error('Error rejecting laporan:', error);
+        this.error = error.response?.data?.message || error.message;
+        throw new Error(this.error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * Resubmit a rejected laporan for approval
+     * @param {string} id - Laporan ID
+     * @returns {Promise<Object>} Updated laporan
+     */
+    async resubmitLaporan(id) {
+      try {
+        this.loading = true;
+        console.log(`Resubmitting laporan ${id} for approval`);
+        
+        const response = await api.put(`/laporan/${id}/resubmit`);
+        console.log('Resubmit response:', response.data);
+        
+        // Update current laporan if it's the one being resubmitted
+        if (this.currentLaporan?.id === id) {
+          this.currentLaporan = response.data;
+        }
+        
+        // Update in laporan list if it exists there
+        const index = this.laporanList.findIndex(item => item.id === id);
+        if (index !== -1) {
+          this.laporanList[index] = response.data;
+        }
+        
+        return response.data;
+      } catch (error) {
+        console.error('Error resubmitting laporan:', error);
+        this.error = error.response?.data?.message || error.message;
+        throw new Error(this.error);
       } finally {
         this.loading = false;
       }
@@ -154,19 +240,68 @@ export const useLaporanStore = defineStore('laporan', {
       }
     },
 
+    /**
+     * Submit a laporan for final approval
+     * @param {string} id - Laporan ID
+     * @returns {Promise<Object>} Updated laporan
+     */
     async submitLaporan(id) {
       try {
         this.loading = true;
-        console.log(`Submitting laporan with ID: ${id}`);
+        
+        // First get the current laporan to check status
+        const currentLaporan = this.currentLaporan?.id === id 
+          ? this.currentLaporan 
+          : await this.getLaporanDetail(id);
+        
+        // Check if both approvals are present
+        if (!currentLaporan.emApproved || !currentLaporan.userApproved) {
+          throw new Error('Laporan belum disetujui oleh semua pihak yang berwenang');
+        }
+        
+        // Check if already submitted
+        if (currentLaporan.status === 'submitted') {
+          throw new Error('Laporan sudah disubmit sebelumnya');
+        }
+        
         const response = await api.put(`/laporan/${id}/submit`);
-        console.log('Submit response:', response.data);
+        
+        // Update current laporan
+        if (this.currentLaporan?.id === id) {
+          this.currentLaporan = response.data;
+        }
+        
+        // Update in laporan list
+        const index = this.laporanList.findIndex(item => item.id === id);
+        if (index !== -1) {
+          this.laporanList[index] = response.data;
+        }
+        
         return response.data;
       } catch (error) {
         console.error('Error submitting laporan:', error);
-        this.error = error.message;
-        throw error;
+        this.error = error.response?.data?.message || error.message;
+        throw new Error(this.error);
       } finally {
         this.loading = false;
+      }
+    },
+    
+    /**
+     * Check if a laporan can be submitted (both approvals done and status is entry)
+     * @param {string} id - Laporan ID
+     * @returns {Promise<boolean>} True if can be submitted
+     */
+    async canSubmitLaporan(id) {
+      try {
+        const laporan = this.currentLaporan?.id === id 
+          ? this.currentLaporan 
+          : await this.getLaporanDetail(id);
+          
+        return laporan.emApproved && laporan.userApproved && laporan.status === 'entry';
+      } catch (error) {
+        console.error('Error checking if laporan can be submitted:', error);
+        return false;
       }
     }
   }

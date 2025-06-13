@@ -221,8 +221,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, watch, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 // Helper function to format date to ISO string
 function formatDateToISO(date) {
@@ -234,12 +234,15 @@ import { useLaporanStore } from 'stores/laporan-store'
 import html2pdf from 'html2pdf.js'
 import LaporanPdfTemplate from 'components/LaporanPdfTemplate.vue'
 
+const route = useRoute()
 const router = useRouter()
 const laporanStore = useLaporanStore()
 const $q = useQuasar()
 const loading = ref(false)
 const showPdfPreview = ref(false)
 const pdfTemplate = ref(null)
+const isEditMode = ref(false)
+const laporanId = ref(null)
 
 const form = ref({
   requestId: '',
@@ -259,6 +262,47 @@ const form = ref({
   department: '',
   buyer: '',
   currency: ''
+})
+
+// Load laporan data for edit
+const loadLaporanData = async () => {
+  if (!isEditMode.value) return
+  
+  try {
+    loading.value = true
+    const laporan = await laporanStore.getLaporanDetail(laporanId.value)
+    
+    // Map laporan data to form
+    if (laporan) {
+      Object.keys(form.value).forEach(key => {
+        if (laporan[key] !== undefined) {
+          form.value[key] = laporan[key]
+        }
+      })
+    }
+    
+    // Handle dates
+    if (laporan.requestDate) form.value.requestDate = laporan.requestDate.split('T')[0]
+    if (laporan.deliveryDate) form.value.deliveryDate = laporan.deliveryDate.split('T')[0]
+    
+  } catch (error) {
+    console.error('Error loading laporan:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal memuat data laporan'
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+// Initialize component
+onMounted(() => {
+  isEditMode.value = route.name === 'edit-laporan' || route.params.id !== undefined
+  if (isEditMode.value) {
+    laporanId.value = route.params.id
+    loadLaporanData()
+  }
 })
 
 // Format date input to ISO format
@@ -327,6 +371,57 @@ const onSave = async () => {
 }
 
 const onSubmit = async () => {
+  if (isEditMode.value) {
+    await onUpdate()
+    return
+  }
+  
+  // Original submit logic
+  try {
+    loading.value = true
+    const formData = prepareFormData()
+    await laporanStore.createLaporan(formData)
+    $q.notify({
+      type: 'positive',
+      message: 'Laporan berhasil dibuat',
+      position: 'top'
+    })
+    router.push('/')
+  } catch (error) {
+    console.error('Error creating laporan:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal membuat laporan',
+      position: 'top'
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+const onUpdate = async () => {
+  if (!laporanId.value) return
+  
+  try {
+    loading.value = true
+    const formData = prepareFormData()
+    await laporanStore.updateLaporan(laporanId.value, formData)
+    $q.notify({
+      type: 'positive',
+      message: 'Laporan berhasil diperbarui',
+      position: 'top'
+    })
+    router.push(`/laporan/${laporanId.value}`)
+  } catch (error) {
+    console.error('Error updating laporan:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal memperbarui laporan',
+      position: 'top'
+    })
+  } finally {
+    loading.value = false
+  }
   try {
     loading.value = true
     const formData = prepareFormData()
