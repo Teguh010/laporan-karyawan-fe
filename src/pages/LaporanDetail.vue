@@ -256,15 +256,6 @@
                   <div class="col">
                     <q-btn 
                       color="primary" 
-                      icon="refresh" 
-                      label="Kirim Ulang Laporan" 
-                      @click="handleResubmit" 
-                      :loading="loading"
-                      class="q-mr-sm"
-                    />
-                    <q-btn 
-                      color="primary" 
-                      outline
                       icon="edit" 
                       label="Edit Laporan" 
                       :to="`/edit/${laporan.id}`"

@@ -80,6 +80,44 @@ export const useLaporanStore = defineStore('laporan', {
     },
 
     /**
+     * Update a laporan
+     * @param {string} id - Laporan ID
+     * @param {Object} formData - The updated laporan data
+     * @returns {Promise<Object>} Updated laporan
+     */
+    async updateLaporan(id, formData) {
+      try {
+        this.loading = true;
+        console.log(`Updating laporan ${id} with data:`, formData);
+        
+        const response = await api.put(`/laporan/${id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        // Update current laporan if it's the one being updated
+        if (this.currentLaporan?.id === id) {
+          this.currentLaporan = response.data;
+        }
+        
+        // Update in laporan list if it exists there
+        const index = this.laporanList.findIndex(item => item.id === id);
+        if (index !== -1) {
+          this.laporanList[index] = response.data;
+        }
+        
+        return response.data;
+      } catch (error) {
+        console.error('Error updating laporan:', error);
+        this.error = error.response?.data?.message || error.message;
+        throw new Error(this.error);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
      * Approve a laporan
      * @param {string} id - Laporan ID
      * @param {string} role - User role (EM or USER)
@@ -175,15 +213,13 @@ export const useLaporanStore = defineStore('laporan', {
         this.loading = true;
         console.log(`Resubmitting laporan ${id} for approval with data:`, formData);
         
-        // First update the laporan with the new data
-        await api.put(`/laporan/${id}`, formData, {
+        // Send all data in a single request to /laporan/{id}/resubmit
+        const response = await api.put(`/laporan/${id}/resubmit`, formData, {
           headers: {
             'Content-Type': 'multipart/form-data'
           }
         });
         
-        // Then mark it as resubmitted
-        const response = await api.put(`/laporan/${id}/resubmit`);
         console.log('Resubmit response:', response.data);
         
         // Update current laporan if it's the one being resubmitted

@@ -3,7 +3,7 @@
     <div class="q-pa-md">
       <h5 class="q-mt-none">Buat Laporan Baru</h5>
       
-      <q-form @submit.prevent class="q-gutter-md">
+      <q-form @submit.prevent="onSubmit" class="q-gutter-md">
         <!-- Form Fields -->
         <div class="row q-col-gutter-md">
           <div class="col-12">
@@ -194,9 +194,9 @@
         </div>
 
         <div class="row q-gutter-md">
-          <q-btn color="grey" label="Save" :loading="loading" @click="onSave" />
-          <q-btn color="primary" label="Submit" :loading="loading" @click="onSubmit" />
-          <q-btn flat label="Print PDF" color="primary" @click="generatePdf" />
+          <q-btn type="button" color="grey" label="Save" :loading="loading" @click="onSave" />
+          <q-btn type="submit" color="primary" label="Submit" :loading="loading" />
+          <q-btn type="button" flat label="Print PDF" color="primary" @click="generatePdf" />
         </div>
       </q-form>
     </div>
@@ -339,9 +339,55 @@ const onFileSelected = (file, type, index) => {
 const prepareFormData = () => {
   const formData = new FormData()
   
+  // Create a copy of form data to avoid modifying the original
+  const formDataToSend = { ...form.value }
+  
+  // Don't include resubmissionCount in the form data
+  // The backend will handle incrementing it when resubmitting
+  delete formDataToSend.resubmissionCount;
+  
+  console.log('Form data to send:', formDataToSend);
+  
   // Append form fields
-  Object.keys(form.value).forEach(key => {
-    formData.append(key, form.value[key])
+  Object.entries(formDataToSend).forEach(([key, value]) => {
+    // Skip null or undefined values to avoid "null" string
+    if (value !== null && value !== undefined) {
+      try {
+        // Special handling for resubmissionCount to ensure it's a number
+        if (key === 'resubmissionCount') {
+          const numValue = Number(value);
+          if (!isNaN(numValue)) {
+            formData.append(key, numValue);
+            return;
+          }
+        }
+        
+        // Convert boolean values to string
+        if (typeof value === 'boolean') {
+          formData.append(key, value.toString());
+        } 
+        // Handle dates
+        else if (value instanceof Date) {
+          formData.append(key, value.toISOString().split('T')[0]);
+        } 
+        // Handle file arrays
+        else if (Array.isArray(value)) {
+          value.forEach(item => {
+            if (item instanceof File) {
+              formData.append(key, item);
+            }
+          });
+        } 
+        // Handle all other values
+        else {
+          formData.append(key, value);
+        }
+      } catch (error) {
+        console.error(`Error processing field ${key}:`, error);
+        // Fallback to default behavior if something goes wrong
+        formData.append(key, value);
+      }
+    }
   })
 
   // Append Need Approve files
@@ -358,6 +404,7 @@ const prepareFormData = () => {
     }
   })
   
+  console.log('FormData prepared:', [...formData.entries()])
   return formData
 }
 
@@ -365,36 +412,55 @@ const onSave = async () => {
   try {
     loading.value = true
     const formData = prepareFormData()
-    console.log('Saving form with isSubmitted=false')
-    const result = await laporanStore.createLaporan(formData, false)
     
-    $q.notify({
-      type: 'positive',
-      message: 'Laporan berhasil disimpan sebagai draft'
-    })
-    
-    router.push(`/${result.id}`)
+    if (isEditMode.value) {
+      // For edit mode, use updateLaporan
+      console.log('Updating laporan as draft')
+      await laporanStore.updateLaporan(laporanId.value, formData)
+      
+      $q.notify({
+        type: 'positive',
+        message: 'Laporan berhasil diperbarui sebagai draft'
+      })
+      
+      router.push(`/edit/${laporanId.value}`)
+    } else {
+      // For new laporan, use createLaporan with isSubmitted=false
+      console.log('Saving new laporan as draft')
+      const result = await laporanStore.createLaporan(formData, false)
+      
+      $q.notify({
+        type: 'positive',
+        message: 'Laporan berhasil disimpan sebagai draft'
+      })
+      
+      router.push(`/edit/${result.id}`)
+    }
   } catch (error) {
     console.error('Error saving form:', error)
     $q.notify({
       type: 'negative',
-      message: 'Terjadi kesalahan saat menyimpan laporan'
+      message: error.response?.data?.message || 'Terjadi kesalahan saat menyimpan laporan'
     })
   } finally {
     loading.value = false
   }
 }
 
-const onSubmit = async () => {
+const onSubmit = async (event) => {
+  console.log('onSubmit called', { isEditMode: isEditMode.value, event });
+  
   if (isEditMode.value) {
-    await onUpdate()
-    return
+    console.log('Calling onUpdate from onSubmit');
+    return onUpdate() // Return here to prevent the code below from executing
   }
   
-  // Original submit logic
+  console.log('Creating new laporan');
+  // Only for new laporan creation
   try {
     loading.value = true
     const formData = prepareFormData()
+    console.log('Calling createLaporan with formData:', formData);
     await laporanStore.createLaporan(formData)
     $q.notify({
       type: 'positive',
@@ -406,7 +472,7 @@ const onSubmit = async () => {
     console.error('Error creating laporan:', error)
     $q.notify({
       type: 'negative',
-      message: 'Gagal membuat laporan',
+      message: error.response?.data?.message || 'Gagal membuat laporan',
       position: 'top'
     })
   } finally {
@@ -415,77 +481,76 @@ const onSubmit = async () => {
 }
 
 const onUpdate = async () => {
-  if (!laporanId.value) return
+  console.log('onUpdate called');
+  if (!laporanId.value) {
+    console.log('No laporanId, returning');
+    return;
+  }
   
   try {
-    loading.value = true
-    const formData = prepareFormData()
+    loading.value = true;
     
-    console.log('Updating laporan with data:', formData)
+    // Check if this is a resubmission of a rejected laporan
+    const isResubmission = laporanStore.currentLaporan?.status === 'rejected';
     
-    // If this is a resubmission (status is 'resubmitted'), handle it specially
-    if (formData.status === 'resubmitted') {
-      console.log('Processing resubmission')
+    // Set the appropriate status
+    if (isResubmission) {
+      form.value.status = 'resubmitted';
+      console.log('Preparing resubmission for rejected laporan');
+    } else {
+      form.value.status = 'draft';
+    }
+    
+    // Prepare form data with the correct status
+    const formData = prepareFormData();
+    console.log('Updating laporan with data:', [...formData.entries()]);
+    
+    let result;
+    
+    if (isResubmission) {
+      console.log('Processing resubmission - calling resubmitLaporan');
       
-      // Just call resubmitLaporan which should handle both the update and status change
-      await laporanStore.resubmitLaporan(laporanId.value, formData)
+      // Call resubmitLaporan for rejected laporan
+      result = await laporanStore.resubmitLaporan(laporanId.value, formData);
+      console.log('resubmitLaporan result:', result);
       
       $q.notify({
         type: 'positive',
         message: 'Laporan berhasil dikirim ulang untuk persetujuan',
         position: 'top'
-      })
+      });
     } else {
-      // Regular update
-      console.log('Processing regular update')
-      await laporanStore.updateLaporan(laporanId.value, formData)
+      // Regular update for non-rejected laporan
+      console.log('Processing regular update');
+      result = await laporanStore.updateLaporan(laporanId.value, formData);
       $q.notify({
         type: 'positive',
         message: 'Laporan berhasil diperbarui',
         position: 'top'
-      })
+      });
     }
     
-    router.push(`/laporan/${laporanId.value}`)
+    // Show PDF preview after successful update
+    showPdfPreview.value = true;
+    
+    // Add watcher for when preview is closed
+    const unwatch = watch(showPdfPreview, (newValue) => {
+      if (!newValue) {
+        // Preview was closed, now redirect
+        router.push(`/edit/${laporanId.value}`);
+        unwatch(); // Clean up the watcher
+      }
+    });
+    
   } catch (error) {
-    console.error('Error updating laporan:', error)
+    console.error('Error updating laporan:', error);
     $q.notify({
       type: 'negative',
       message: error.response?.data?.message || 'Gagal memperbarui laporan',
       position: 'top'
-    })
+    });
   } finally {
-    loading.value = false
-  }
-  try {
-    loading.value = true
-    const formData = prepareFormData()
-    console.log('Submitting form with isSubmitted=true')
-    const result = await laporanStore.createLaporan(formData, true)
-    
-    $q.notify({
-      type: 'positive',
-      message: 'Laporan berhasil disubmit'
-    })
-
-    // Show PDF preview
-    showPdfPreview.value = true
-
-    // Add watcher for when preview is closed
-    watch(showPdfPreview, (newValue) => {
-      if (!newValue) {
-        // Preview was closed, now redirect
-        router.push(`/${result.id}`)
-      }
-    })
-  } catch (error) {
-    console.error('Error submitting form:', error)
-    $q.notify({
-      type: 'negative',
-      message: 'Terjadi kesalahan saat submit laporan'
-    })
-  } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 
