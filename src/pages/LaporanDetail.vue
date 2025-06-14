@@ -4,7 +4,17 @@
       <template v-if="laporan">
         <div class="row q-col-gutter-md">
           <div class="col-12">
-            <div class="text-h6 q-mb-md">Detail Laporan</div>
+            <div class="row items-center q-mb-md">
+              <div class="text-h6">Detail Laporan</div>
+              <q-space />
+              <q-btn 
+                color="primary" 
+                icon="picture_as_pdf" 
+                label="Preview PDF" 
+                @click="previewPdf"
+                class="q-ml-md"
+              />
+            </div>
             <div class="row q-col-gutter-md">
               <div class="col-6">
                 <q-card class="q-mb-md">
@@ -358,6 +368,27 @@
         </q-card>
       </q-dialog>
     </div>
+    <!-- PDF Preview Dialog -->
+    <q-dialog v-model="showPdfPreview" maximized>
+      <q-card style="max-width: 90vw; max-height: 90vh;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">Preview Laporan</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+
+        <q-card-section class="q-pt-none scroll" style="max-height: calc(90vh - 110px);">
+          <div id="pdf-content">
+            <LaporanPdfTemplate :data="laporan" ref="pdfTemplate" />
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md">
+          <q-btn flat label="Tutup" color="primary" v-close-popup />
+          <q-btn label="Print PDF" color="primary" @click="printPdf" />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
@@ -367,6 +398,9 @@ import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useLaporanStore } from 'src/stores/laporan-store';
 import { useAuthStore } from 'src/stores/auth-store';
+import LaporanPdfTemplate from 'components/LaporanPdfTemplate.vue';
+import html2pdf from 'html2pdf.js';
+
 
 const route = useRoute();
 const router = useRouter();
@@ -382,10 +416,11 @@ const approvalLoading = ref(false);
 const submitLoading = ref(false);
 const rejectLoading = ref(false);
 const showRejectDialog = ref(false);
+const showPdfPreview = ref(false);
+const pdfDialog = ref(false);
 const rejectReason = ref('');
+const pdfTemplate = ref(null);
 const userRole = ref(authStore.user?.role || '');
-
-console.log('userRole.value', userRole.value);
 
 // Computed
 const isVendor = computed(() => {
@@ -672,6 +707,99 @@ const openRejectDialog = () => {
   rejectReason.value = '';
   showRejectDialog.value = true;
 };
+
+const previewPdf = () => {
+  showPdfPreview.value = true;
+};
+
+const printPdf = async () => {
+  const element = document.getElementById('pdf-content');
+  if (!element) {
+    console.error('PDF content element not found');
+    $q.notify({
+      type: 'negative',
+      message: 'PDF content not found',
+      position: 'top'
+    });
+    return;
+  }
+
+  try {
+    $q.loading.show({
+      message: 'Membuat PDF...'
+    });
+    
+    const opt = {
+      margin: 1,
+      filename: `laporan-${laporan.value.requestId || 'report'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { 
+        scale: 2,
+        useCORS: true,
+        logging: true
+      },
+      jsPDF: { 
+        unit: 'mm', 
+        format: 'a4', 
+        orientation: 'portrait'
+      }
+    };
+
+    // Wait for images to load
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Generate and download PDF
+    await html2pdf().set(opt).from(element).save();
+    
+    $q.notify({
+      type: 'positive',
+      message: 'PDF berhasil dibuat',
+      position: 'top',
+      timeout: 2000
+    });
+    
+    // Close the preview dialog after download
+    showPdfPreview.value = false;
+    
+  } catch (error) {
+    console.error('Error generating PDF:', error);
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal membuat PDF: ' + (error.message || 'Terjadi kesalahan'),
+      position: 'top',
+      timeout: 3000
+    });
+  } finally {
+    $q.loading.hide();
+  }
+};
+
+// const previewPdf = async () => {
+//   try {
+//     $q.loading.show({
+//       message: 'Menyiapkan pratinjau PDF...'
+//     });
+
+//     await new Promise(resolve => setTimeout(resolve, 1000));
+//     $q.loading.hide();
+
+//     Dialog.create({
+//       title: 'Preview PDF',
+//       message: 'Fitur preview PDF akan segera tersedia.',
+//       ok: true,
+//       persistent: true
+//     });
+//   } catch (error) {
+//     console.error('Error in previewPdf:', error);
+//     $q.loading.hide();
+//     $q.notify({
+//       type: 'negative',
+//       message: 'Gagal membuka pratinjau PDF',
+//       position: 'top',
+//       timeout: 3000
+//     });
+//   }
+// };
 
 // Initialize component
 onMounted(() => {

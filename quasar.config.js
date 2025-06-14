@@ -30,6 +30,17 @@ module.exports = configure(function (/* ctx */) {
       'app.scss'
     ],
 
+    // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
+    framework: {
+      config: {},
+      plugins: [
+        'Dialog',
+        'Notify',
+        'Loading'
+      ]
+    },
+
+
     // https://github.com/quasarframework/quasar/tree/dev/extras
     extras: [
       // 'ionicons-v4',
