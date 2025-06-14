@@ -12,7 +12,7 @@
         />
 
         <q-toolbar-title>
-          Laporan Karyawan
+          Purchase Request
           <q-badge v-if="authStore.user" color="secondary" class="q-ml-sm">
             {{ authStore.user.role.toUpperCase() }}
           </q-badge>
@@ -48,7 +48,7 @@
             <q-icon name="description" />
           </q-item-section>
           <q-item-section>
-            Daftar Laporan
+            Purchase Request List
           </q-item-section>
         </q-item>
 

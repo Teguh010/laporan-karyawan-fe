@@ -3,13 +3,13 @@
     <div class="q-pa-md">
       <div class="row q-mb-md">
         <div class="col">
-          <div class="text-h6">Daftar Laporan</div>
+          <div class="text-h6">Purchase Request List</div>
         </div>
         <div class="col-auto">
           <q-btn 
             color="primary" 
             icon="add" 
-            label="Buat Laporan" 
+            label="Create Purchase Request" 
             to="/create" 
           />
         </div>
@@ -18,7 +18,7 @@
       <!-- Filter Section -->
       <q-card class="q-mb-md">
         <q-card-section>
-          <div class="text-subtitle1 q-mb-sm">Filter Laporan</div>
+          <div class="text-subtitle1 q-mb-sm">Filter Purchase Requests</div>
           <div class="row q-col-gutter-md">
             <div class="col-12 col-sm-4">
               <q-select
@@ -69,7 +69,7 @@
 
       <q-card>
         <q-table
-          :rows="laporanList"
+          :rows="purchaseRequestList"
           :columns="columns"
           row-key="id"
           :loading="loading"
@@ -86,7 +86,7 @@
 
           <template v-slot:no-data>
             <div class="full-width row flex-center q-pa-md text-grey">
-              Tidak ada data laporan
+              No purchase request data available
             </div>
           </template>
 
@@ -135,12 +135,12 @@
     <q-dialog v-model="showDeleteConfirm" persistent>
       <q-card>
         <q-card-section class="row items-center">
-          <span class="q-ml-sm">Apakah Anda yakin ingin menghapus laporan ini?</span>
+          <span class="q-ml-sm">Are you sure you want to delete this purchase request?</span>
         </q-card-section>
 
         <q-card-actions align="right">
           <q-btn flat label="Batal" color="primary" v-close-popup />
-          <q-btn flat label="Hapus" color="negative" @click="deleteLaporan" v-close-popup />
+          <q-btn flat label="Delete" color="negative" @click="deletePurchaseRequest" v-close-popup />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -151,7 +151,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useLaporanStore } from 'stores/laporan-store'
+import { usePurchaseRequestStore } from 'stores/purchase-request-store'
 
 // Helper functions
 const formatDate = (dateString) => {
@@ -170,12 +170,12 @@ const formatNumber = (numberString) => {
 
 const router = useRouter()
 const $q = useQuasar()
-const laporanStore = useLaporanStore()
+const purchaseRequestStore = usePurchaseRequestStore()
 
 const loading = ref(false)
-const laporanList = ref([])
+const purchaseRequestList = ref([])
 const showDeleteConfirm = ref(false)
-const selectedLaporan = ref(null)
+const selectedPurchaseRequest = ref(null)
 
 // Filter state
 const filters = ref({
@@ -295,16 +295,21 @@ const getStatusColor = (status) => {
   return colorMap[status] || 'grey'
 }
 
-const loadLaporanList = async () => {
-  loading.value = true
+const loadPurchaseRequestList = async () => {
   try {
-    const data = await laporanStore.getAllLaporan()
-    laporanList.value = data
+    loading.value = true
+    const filters = {
+      status: filters.value.status,
+      startDate: filters.value.startDate,
+      endDate: filters.value.endDate
+    }
+    await purchaseRequestStore.filterPurchaseRequests(filters)
+    purchaseRequestList.value = purchaseRequestStore.purchaseRequestList
   } catch (error) {
-    console.error('Error loading laporan list:', error)
+    console.error('Error loading purchase request list:', error)
     $q.notify({
       type: 'negative',
-      message: 'Gagal memuat daftar laporan'
+      message: 'Failed to load purchase requests'
     })
   } finally {
     loading.value = false
@@ -346,23 +351,23 @@ const onRowClick = (evt, row) => {
 }
 
 const confirmDelete = (row) => {
-  selectedLaporan.value = row
+  selectedPurchaseRequest.value = row
   showDeleteConfirm.value = true
 }
 
-const deleteLaporan = async () => {
+const deletePurchaseRequest = async () => {
   try {
-    await laporanStore.deleteLaporan(selectedLaporan.value.id)
-    await loadLaporanList()
+    await purchaseRequestStore.deletePurchaseRequest(selectedPurchaseRequest.value.id)
+    await loadPurchaseRequestList()
     $q.notify({
       type: 'positive',
-      message: 'Laporan berhasil dihapus'
+      message: 'Purchase request deleted successfully'
     })
   } catch (error) {
-    console.error('Error deleting laporan:', error)
+    console.error('Error deleting purchase request:', error)
     $q.notify({
       type: 'negative',
-      message: 'Gagal menghapus laporan'
+      message: 'Failed to delete purchase request'
     })
   }
 }

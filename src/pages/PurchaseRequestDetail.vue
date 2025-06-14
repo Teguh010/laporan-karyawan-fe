@@ -5,7 +5,7 @@
         <div class="row q-col-gutter-md">
           <div class="col-12">
             <div class="row items-center q-mb-md">
-              <div class="text-h6">Detail Laporan</div>
+              <div class="text-h6">Purchase Request Details</div>
               <q-space />
               <q-btn 
                 color="primary" 
@@ -396,20 +396,20 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
-import { useLaporanStore } from 'src/stores/laporan-store';
+import { usePurchaseRequestStore } from 'stores/purchase-request-store';
 import { useAuthStore } from 'src/stores/auth-store';
-import LaporanPdfTemplate from 'components/LaporanPdfTemplate.vue';
+import PurchaseRequestPdfTemplate from 'components/PurchaseRequestPdfTemplate.vue';
 import html2pdf from 'html2pdf.js';
 
 
 const route = useRoute();
 const router = useRouter();
 const $q = useQuasar();
-const laporanStore = useLaporanStore();
+const purchaseRequestStore = usePurchaseRequestStore();
 const authStore = useAuthStore();
 
 // State
-const laporan = ref(null);
+const purchaseRequest = ref(null);
 const loading = ref(false);
 const error = ref(null);
 const approvalLoading = ref(false);
@@ -428,9 +428,9 @@ const isVendor = computed(() => {
 });
 
 const canReject = computed(() => {
-  if (!laporan.value) return false;
+  if (!purchaseRequest.value) return false;
   // Hanya bisa menolak jika status masih 'entry' dan user memiliki akses
-  return laporan.value.status === 'entry' && 
+  return purchaseRequest.value.status === 'entry' && 
          (userRole.value === 'em' || userRole.value === 'user');
 });
 
@@ -440,25 +440,25 @@ const canApprove = computed(() => {
 });
 
 const hasApproved = computed(() => {
-  if (!laporan.value) return false;
+  if (!purchaseRequest.value) return false;
   return userRole.value === 'em' 
-    ? laporan.value.emApproved 
+    ? purchaseRequest.value.emApproved 
     : userRole.value === 'user' 
-      ? laporan.value.userApproved 
+      ? purchaseRequest.value.userApproved 
       : false;
 });
 
-console.log('userRole.value', laporan);
+console.log('userRole.value', purchaseRequest);
 
 const showApprovalButtons = computed(() => {
-  return laporan.value?.status === 'entry' && canApprove.value;
+  return purchaseRequest.value?.status === 'entry' && canApprove.value;
 });
 
 const canSubmit = computed(() => {
-  if (!laporan.value) return false;
-  return laporan.value.emApproved && 
-         laporan.value.userApproved && 
-         laporan.value.status === 'entry';
+  if (!purchaseRequest.value) return false;
+  return purchaseRequest.value.emApproved && 
+         purchaseRequest.value.userApproved && 
+         purchaseRequest.value.status === 'entry';
 });
 
 // Helper functions
@@ -515,19 +515,19 @@ const getStatusLabel = (status) => {
   }
 };
 
-// Load laporan details
-const loadLaporan = async () => {
+// Load purchase request details
+const loadPurchaseRequest = async () => {
   try {
     loading.value = true;
-    const data = await laporanStore.getLaporanDetail(route.params.id);
-    laporan.value = data;
-    console.log('Laporan data:', data);
+    const data = await purchaseRequestStore.getPurchaseRequestDetail(route.params.id);
+    purchaseRequest.value = data;
+    console.log('Purchase Request data:', data);
   } catch (err) {
     error.value = err.message;
-    console.error('Error loading laporan:', err);
+    console.error('Error loading purchase request:', err);
     $q.notify({
       type: 'negative',
-      message: 'Gagal memuat detail laporan',
+      message: 'Gagal memuat detail purchase request',
     });
   } finally {
     loading.value = false;
@@ -571,7 +571,7 @@ const approveLaporan = async () => {
   try {
     approvalLoading.value = true;
     await laporanStore.approveLaporan(route.params.id, userRole.value);
-    await loadLaporan();
+    await loadPurchaseRequest();
     $q.notify({
       color: 'positive',
       message: `Persetujuan sebagai ${userRole.value} berhasil disimpan`,
@@ -634,7 +634,7 @@ const submitLaporan = async () => {
     });
     
     // Refresh data laporan
-    await loadLaporan();
+    await loadPurchaseRequest();
   } catch (error) {
     console.error('Error submitting laporan:', error);
     $q.notify({
@@ -666,7 +666,7 @@ const handleReject = async () => {
     });
     showRejectDialog.value = false;
     rejectReason.value = '';
-    await loadLaporan();
+    await loadPurchaseRequest();
   } catch (error) {
     console.error('Error rejecting laporan:', error);
     $q.notify({
@@ -691,7 +691,7 @@ const handleResubmit = async () => {
         type: 'positive',
         message: 'Laporan berhasil dikirim ulang untuk persetujuan',
       });
-      await loadLaporan();
+      await loadPurchaseRequest();
     } catch (error) {
       console.error('Error resubmitting laporan:', error);
       $q.notify({
@@ -803,6 +803,6 @@ const printPdf = async () => {
 
 // Initialize component
 onMounted(() => {
-  loadLaporan();
+  loadPurchaseRequest();
 });
 </script>

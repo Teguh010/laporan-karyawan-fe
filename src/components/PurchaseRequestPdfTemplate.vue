@@ -1,8 +1,7 @@
 <template>
   <div id="pdf-content" class="pdf-container">
-    <!-- Kop Surat -->
+    <!-- Letterhead -->
     <div class="header">
-      <!-- <img src="logo-perusahaan.png" alt="Logo" class="logo"> -->
       <div class="company-info">
         <h3>PT. NAMA PERUSAHAAN</h3>
         <p>Jl. Alamat Perusahaan No. 123</p>
@@ -11,14 +10,15 @@
       <hr class="divider">
     </div>
 
-    <!-- Judul BAP -->
+    <!-- Document Title -->
     <div class="text-center">
-      <p>No. BAP : {{ data.noBap || '________________' }}</p>
+      <h2>PURCHASE REQUEST</h2>
+      <p>No. Document: {{ data.requestId || '________________' }}</p>
     </div>
 
     <div class="content">
-      <p>Dengan hormat,</p>
-      <p>Bersama ini kami beritahukan bahwa hasil pekerjaan :</p>
+      <p>Dear Sir/Madam,</p>
+      <p>We hereby inform you regarding the following purchase request:</p>
       
       <table class="data-table">
         <tr>
@@ -47,7 +47,7 @@
         </tr>
       </table>
 
-      <p class="mt-3">Telah dilakukan pengecekan Hasil Pekerjaan Konstruksi / Jasa sebagai berikut :</p>
+      <p class="mt-3">The following specifications and requirements have been verified:</p>
 
       <!-- Tabel Pengecekan -->
       <table class="checklist-table" border="1" cellspacing="0" cellpadding="5">
@@ -145,7 +145,7 @@
 
 <script>
 export default {
-  name: 'LaporanPdfTemplate',
+  name: 'PurchaseRequestPdfTemplate',
   props: {
     data: {
       type: Object,

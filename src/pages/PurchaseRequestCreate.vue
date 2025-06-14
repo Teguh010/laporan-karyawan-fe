@@ -1,7 +1,7 @@
 <template>
   <q-page padding>
     <div class="q-pa-md">
-      <h5 class="q-mt-none">Buat Laporan Baru</h5>
+      <h5 class="q-mt-none">Edit Purchase Request</h5>
       
       <q-form @submit.prevent="onSubmit" class="q-gutter-md">
         <!-- Form Fields -->
@@ -204,7 +204,7 @@
     <q-dialog v-model="showPdfPreview">
       <q-card style="width: 800px; max-width: 90vw;">
         <q-card-section>
-          <div class="text-h6">Preview Laporan</div>
+          <div class="text-h6">Preview Purchase Request</div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
@@ -230,19 +230,19 @@ function formatDateToISO(date) {
   return d.toISOString().split('T')[0]
 }
 import { useQuasar } from 'quasar'
-import { useLaporanStore } from 'stores/laporan-store'
+import { usePurchaseRequestStore } from 'stores/purchase-request-store'
 import html2pdf from 'html2pdf.js'
-import LaporanPdfTemplate from 'components/LaporanPdfTemplate.vue'
+import PurchaseRequestPdfTemplate from 'components/PurchaseRequestPdfTemplate.vue'
 
 const route = useRoute()
 const router = useRouter()
-const laporanStore = useLaporanStore()
+const purchaseRequestStore = usePurchaseRequestStore()
 const $q = useQuasar()
 const loading = ref(false)
 const showPdfPreview = ref(false)
 const pdfTemplate = ref(null)
 const isEditMode = ref(false)
-const laporanId = ref(null)
+const purchaseRequestId = ref(null)
 
 const form = ref({
   requestId: '',
@@ -266,23 +266,23 @@ const form = ref({
   resubmissionCount: 0
 })
 
-// Load laporan data for edit
-const loadLaporanData = async () => {
+// Load purchase request data for edit
+const loadPurchaseRequestData = async () => {
   if (!isEditMode.value) return
   
   try {
     loading.value = true
-    const laporan = await laporanStore.getLaporanDetail(laporanId.value)
+    const purchaseRequest = await purchaseRequestStore.getPurchaseRequestDetail(purchaseRequestId.value)
     
-    // Map laporan data to form
-    if (laporan) {
+    // Map purchase request data to form
+    if (purchaseRequest) {
       // Copy all fields except status and resubmissionCount
-      const { status, resubmissionCount, ...laporanData } = laporan
+      const { status, resubmissionCount, ...purchaseRequestData } = purchaseRequest
       
       // Set form values
       Object.keys(form.value).forEach(key => {
-        if (laporanData[key] !== undefined) {
-          form.value[key] = laporanData[key]
+        if (purchaseRequestData[key] !== undefined) {
+          form.value[key] = purchaseRequestData[key]
         }
       })
       
@@ -297,14 +297,14 @@ const loadLaporanData = async () => {
     }
     
     // Handle dates
-    if (laporan.requestDate) form.value.requestDate = laporan.requestDate.split('T')[0]
-    if (laporan.deliveryDate) form.value.deliveryDate = laporan.deliveryDate.split('T')[0]
+    if (purchaseRequest.requestDate) form.value.requestDate = purchaseRequest.requestDate.split('T')[0]
+    if (purchaseRequest.deliveryDate) form.value.deliveryDate = purchaseRequest.deliveryDate.split('T')[0]
     
   } catch (error) {
-    console.error('Error loading laporan:', error)
+    console.error('Error loading purchase request:', error)
     $q.notify({
       type: 'negative',
-      message: 'Gagal memuat data laporan'
+      message: 'Failed to load purchase request data'
     })
   } finally {
     loading.value = false
@@ -313,10 +313,10 @@ const loadLaporanData = async () => {
 
 // Initialize component
 onMounted(() => {
-  isEditMode.value = route.name === 'edit-laporan' || route.params.id !== undefined
+  isEditMode.value = route.name === 'edit-purchase-request' || route.params.id !== undefined
   if (isEditMode.value) {
-    laporanId.value = route.params.id
-    loadLaporanData()
+    purchaseRequestId.value = route.params.id
+    loadPurchaseRequestData()
   }
 })
 
@@ -414,24 +414,24 @@ const onSave = async () => {
     const formData = prepareFormData()
     
     if (isEditMode.value) {
-      // For edit mode, use updateLaporan
-      console.log('Updating laporan as draft')
-      await laporanStore.updateLaporan(laporanId.value, formData)
+      // For edit mode, use updatePurchaseRequest
+      console.log('Updating purchase request as draft')
+      await purchaseRequestStore.updatePurchaseRequest(purchaseRequestId.value, formData)
       
       $q.notify({
         type: 'positive',
-        message: 'Laporan berhasil diperbarui sebagai draft'
+        message: 'Purchase request updated as draft successfully'
       })
       
-      router.push(`/edit/${laporanId.value}`)
+      router.push(`/edit/${purchaseRequestId.value}`)
     } else {
-      // For new laporan, use createLaporan with isSubmitted=false
-      console.log('Saving new laporan as draft')
-      const result = await laporanStore.createLaporan(formData, false)
+      // For new purchase request, use createPurchaseRequest with isSubmitted=false
+      console.log('Saving new purchase request as draft')
+      const result = await purchaseRequestStore.createPurchaseRequest(formData, false)
       
       $q.notify({
         type: 'positive',
-        message: 'Laporan berhasil disimpan sebagai draft'
+        message: 'Purchase request saved as draft successfully'
       })
       
       router.push(`/edit/${result.id}`)
@@ -440,7 +440,7 @@ const onSave = async () => {
     console.error('Error saving form:', error)
     $q.notify({
       type: 'negative',
-      message: error.response?.data?.message || 'Terjadi kesalahan saat menyimpan laporan'
+      message: error.response?.data?.message || 'Error occurred while saving purchase request'
     })
   } finally {
     loading.value = false
@@ -455,24 +455,24 @@ const onSubmit = async (event) => {
     return onUpdate() // Return here to prevent the code below from executing
   }
   
-  console.log('Creating new laporan');
-  // Only for new laporan creation
+  console.log('Creating new purchase request');
+  // Only for new purchase request creation
   try {
     loading.value = true
     const formData = prepareFormData()
-    console.log('Calling createLaporan with formData:', formData);
-    await laporanStore.createLaporan(formData)
+    console.log('Calling createPurchaseRequest with formData:', formData);
+    await purchaseRequestStore.createPurchaseRequest(formData)
     $q.notify({
       type: 'positive',
-      message: 'Laporan berhasil dibuat',
+      message: 'Purchase request created successfully',
       position: 'top'
     })
     router.push('/')
   } catch (error) {
-    console.error('Error creating laporan:', error)
+    console.error('Error creating purchase request:', error)
     $q.notify({
       type: 'negative',
-      message: error.response?.data?.message || 'Gagal membuat laporan',
+      message: error.response?.data?.message || 'Failed to create purchase request',
       position: 'top'
     })
   } finally {
@@ -482,50 +482,50 @@ const onSubmit = async (event) => {
 
 const onUpdate = async () => {
   console.log('onUpdate called');
-  if (!laporanId.value) {
-    console.log('No laporanId, returning');
+  if (!purchaseRequestId.value) {
+    console.log('No purchaseRequestId, returning');
     return;
   }
   
   try {
     loading.value = true;
     
-    // Check if this is a resubmission of a rejected laporan
-    const isResubmission = laporanStore.currentLaporan?.status === 'rejected';
+    // Check if this is a resubmission of a rejected purchase request
+    const isResubmission = purchaseRequestStore.currentPurchaseRequest?.status === 'rejected';
     
     // Set the appropriate status
     if (isResubmission) {
       form.value.status = 'resubmitted';
-      console.log('Preparing resubmission for rejected laporan');
+      console.log('Preparing resubmission for rejected purchase request');
     } else {
       form.value.status = 'draft';
     }
     
     // Prepare form data with the correct status
     const formData = prepareFormData();
-    console.log('Updating laporan with data:', [...formData.entries()]);
+    console.log('Updating purchase request with data:', [...formData.entries()]);
     
     let result;
     
     if (isResubmission) {
-      console.log('Processing resubmission - calling resubmitLaporan');
+      console.log('Processing resubmission - calling resubmitPurchaseRequest');
       
-      // Call resubmitLaporan for rejected laporan
-      result = await laporanStore.resubmitLaporan(laporanId.value, formData);
-      console.log('resubmitLaporan result:', result);
+      // Call resubmitPurchaseRequest for rejected purchase request
+      result = await purchaseRequestStore.resubmitPurchaseRequest(purchaseRequestId.value, formData);
+      console.log('resubmitPurchaseRequest result:', result);
       
       $q.notify({
         type: 'positive',
-        message: 'Laporan berhasil dikirim ulang untuk persetujuan',
+        message: 'Purchase request resubmitted successfully',
         position: 'top'
       });
     } else {
-      // Regular update for non-rejected laporan
+      // Regular update for non-rejected purchase request
       console.log('Processing regular update');
-      result = await laporanStore.updateLaporan(laporanId.value, formData);
+      result = await purchaseRequestStore.updatePurchaseRequest(purchaseRequestId.value, formData);
       $q.notify({
         type: 'positive',
-        message: 'Laporan berhasil diperbarui',
+        message: 'Purchase request updated successfully',
         position: 'top'
       });
     }

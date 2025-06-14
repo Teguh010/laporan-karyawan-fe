@@ -35,23 +35,23 @@ const routes = [
     children: [
       {
         path: '',
-        component: () => import('pages/LaporanList.vue')
+        component: () => import('pages/PurchaseRequestList.vue')
       },
       {
         path: 'create',
-        name: 'create-laporan',
-        component: () => import('pages/LaporanCreate.vue')
+        name: 'create-purchase-request',
+        component: () => import('pages/PurchaseRequestCreate.vue')
       },
       {
         path: ':id',
-        name: 'view-laporan',
-        component: () => import('pages/LaporanDetail.vue'),
+        name: 'view-purchase-request',
+        component: () => import('pages/PurchaseRequestDetail.vue'),
         props: true
       },
       {
         path: 'edit/:id',
-        name: 'edit-laporan',
-        component: () => import('pages/LaporanCreate.vue'),
+        name: 'edit-purchase-request',
+        component: () => import('pages/PurchaseRequestCreate.vue'),
         props: { isEdit: true }
       },
       {
