@@ -361,6 +361,36 @@ export const useLaporanStore = defineStore('laporan', {
         console.error('Error checking if laporan can be submitted:', error);
         return false;
       }
+    },
+
+    async assignLaporan(id, userId) {
+      try {
+        this.loading = true;
+        const response = await api.put(`/laporan/${id}/assign`, { userId });
+        if (this.currentLaporan?.id === id) {
+          this.currentLaporan = response.data;
+        }
+        return response.data;
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    async getAssignedLaporan(userId) {
+      try {
+        this.loading = true;
+        const response = await api.get(`/laporan/assigned/${userId}`);
+        this.laporanList = response.data;
+        return response.data;
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
     }
   }
 });

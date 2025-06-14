@@ -46,7 +46,7 @@
                             <td class="text-weight-medium">Asset Type</td>
                             <td>{{ laporan.assetType }}</td>
                           </tr>
-                            <tr>
+                          <tr>
                             <td class="text-weight-medium">Request Objective</td>
                             <td>{{ laporan.requestObjective }}</td>
                           </tr>
@@ -62,7 +62,7 @@
                     <div class="q-table__container">
                       <table class="q-table q-table--bordered q-table--dense">
                         <tbody>
-                           <tr>
+                          <tr>
                             <td class="text-weight-medium">Request Background</td>
                             <td>{{ laporan.requestBackground }}</td>
                           </tr>
@@ -324,6 +324,47 @@
             </q-card>
           </div>
         </div>
+
+        <!-- Assign Laporan Section -->
+        <div class="row q-mt-md" v-if="laporan.status === 'entry' && (userRole === 'vendor' || userRole === 'em')">
+          <div class="col-12">
+            <q-card>
+              <q-card-section>
+                <div class="text-h6">Assign Laporan</div>
+                <p v-if="!laporan.assignTo">
+                  Laporan belum di-assign. Silakan assign ke user tertentu.
+                </p>
+                <p v-else>
+                  Laporan sudah di-assign ke {{ laporan.assignedTo?.fullName || 'Unknown User' }}.
+                </p>
+                <div class="row q-mt-md">
+                  <div class="col">
+                    <q-select
+                      v-model="selectedUser"
+                      :options="userList"
+                      label="Select User"
+                      option-label="fullName"
+                      option-value="id"
+                      emit-value
+                      map-options
+                      :loading="loadingUsers"
+                      :disable="loadingUsers"
+                    />
+                    <q-btn 
+                      color="primary" 
+                      icon="assignment" 
+                      label="Assign Laporan" 
+                      @click="assignLaporan" 
+                      :loading="assignLoading"
+                      :disable="!selectedUser"
+                      class="q-mt-md"
+                    />
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+        </div>
       </template>
 
       <div v-else class="text-center q-pa-md">
@@ -398,15 +439,16 @@ import { useRoute, useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useLaporanStore } from 'src/stores/laporan-store';
 import { useAuthStore } from 'src/stores/auth-store';
+import { useUserStore } from '../stores/user-store';
 import LaporanPdfTemplate from 'components/LaporanPdfTemplate.vue';
 import html2pdf from 'html2pdf.js';
-
 
 const route = useRoute();
 const router = useRouter();
 const $q = useQuasar();
 const laporanStore = useLaporanStore();
 const authStore = useAuthStore();
+const userStore = useUserStore();
 
 // State
 const laporan = ref(null);
@@ -421,6 +463,10 @@ const pdfDialog = ref(false);
 const rejectReason = ref('');
 const pdfTemplate = ref(null);
 const userRole = ref(authStore.user?.role || '');
+const selectedUser = ref(null);
+const userList = ref([]);
+const loadingUsers = ref(false);
+const assignLoading = ref(false);
 
 // Computed
 const isVendor = computed(() => {
@@ -531,6 +577,52 @@ const loadLaporan = async () => {
     });
   } finally {
     loading.value = false;
+  }
+};
+
+// Load user list for assignment
+const loadUserList = async () => {
+  try {
+    loadingUsers.value = true;
+    const users = await userStore.getAllUsers();
+    userList.value = users;
+  } catch (err) {
+    console.error('Error loading users:', err);
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal memuat daftar user',
+    });
+  } finally {
+    loadingUsers.value = false;
+  }
+};
+
+// Assign laporan to user
+const assignLaporan = async () => {
+  if (!selectedUser.value) {
+    $q.notify({
+      type: 'warning',
+      message: 'Silakan pilih user terlebih dahulu',
+    });
+    return;
+  }
+
+  try {
+    assignLoading.value = true;
+    await laporanStore.assignLaporan(laporan.value.id, selectedUser.value);
+    await loadLaporan();
+    $q.notify({
+      type: 'positive',
+      message: 'Laporan berhasil di-assign',
+    });
+  } catch (err) {
+    console.error('Error assigning laporan:', err);
+    $q.notify({
+      type: 'negative',
+      message: 'Gagal meng-assign laporan',
+    });
+  } finally {
+    assignLoading.value = false;
   }
 };
 
@@ -774,35 +866,9 @@ const printPdf = async () => {
   }
 };
 
-// const previewPdf = async () => {
-//   try {
-//     $q.loading.show({
-//       message: 'Menyiapkan pratinjau PDF...'
-//     });
-
-//     await new Promise(resolve => setTimeout(resolve, 1000));
-//     $q.loading.hide();
-
-//     Dialog.create({
-//       title: 'Preview PDF',
-//       message: 'Fitur preview PDF akan segera tersedia.',
-//       ok: true,
-//       persistent: true
-//     });
-//   } catch (error) {
-//     console.error('Error in previewPdf:', error);
-//     $q.loading.hide();
-//     $q.notify({
-//       type: 'negative',
-//       message: 'Gagal membuka pratinjau PDF',
-//       position: 'top',
-//       timeout: 3000
-//     });
-//   }
-// };
-
 // Initialize component
 onMounted(() => {
   loadLaporan();
+  loadUserList();
 });
 </script>

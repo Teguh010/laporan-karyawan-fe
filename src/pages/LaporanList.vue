@@ -152,6 +152,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useLaporanStore } from 'stores/laporan-store'
+import { useAuthStore } from 'stores/auth-store'
 
 // Helper functions
 const formatDate = (dateString) => {
@@ -171,11 +172,14 @@ const formatNumber = (numberString) => {
 const router = useRouter()
 const $q = useQuasar()
 const laporanStore = useLaporanStore()
+const authStore = useAuthStore()
 
 const loading = ref(false)
 const laporanList = ref([])
 const showDeleteConfirm = ref(false)
 const selectedLaporan = ref(null)
+const userRole = ref(authStore.user?.role || '')
+const userId = ref(authStore.user?.id || '')
 
 // Filter state
 const filters = ref({
@@ -193,14 +197,14 @@ const statusOptions = [
 ]
 
 const columns = [
-  {
-    name: 'requestId',
-    required: true,
-    label: 'Request ID',
-    align: 'left',
-    field: 'requestId',
-    sortable: true
-  },
+  // {
+  //   name: 'requestId',
+  //   required: true,
+  //   label: 'Request ID',
+  //   align: 'left',
+  //   field: 'requestId',
+  //   sortable: true
+  // },
   {
     name: 'title',
     required: true,
@@ -298,7 +302,12 @@ const getStatusColor = (status) => {
 const loadLaporanList = async () => {
   loading.value = true
   try {
-    const data = await laporanStore.getAllLaporan()
+    let data
+    if (userRole.value === 'user') {
+      data = await laporanStore.getAssignedLaporan(userId.value)
+    } else {
+      data = await laporanStore.getAllLaporan()
+    }
     laporanList.value = data
   } catch (error) {
     console.error('Error loading laporan list:', error)
